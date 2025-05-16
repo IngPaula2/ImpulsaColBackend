@@ -1,21 +1,21 @@
 import express from 'express';
-import pool from './infrastructure/database/connection';
+import authRoutes from './adapters/routes/authRoutes';
+import protectedRoutes from './adapters/routes/protectedRoutes';
 
 const app = express();
 const port = 3000;
 
+app.use(express.json());
+
+// Rutas públicas de autenticación
+app.use('/api', authRoutes);
+
+// Rutas protegidas (requieren JWT válido)
+app.use('/api/protected', protectedRoutes);
+
+// Ruta base para comprobar funcionamiento del backend
 app.get('/', (_req, res) => {
     res.send('¡ImpulsaCol Backend está funcionando!');
-});
-
-// Nueva ruta para probar la conexión a la DB
-app.get('/test-db', async (_req, res) => {
-    try {
-        const result = await pool.query('SELECT NOW()');
-        res.json({ time: result.rows[0].now });
-    } catch (error) {
-        res.status(500).json({ error: 'Error al conectar con la base de datos' });
-    }
 });
 
 app.listen(port, () => {

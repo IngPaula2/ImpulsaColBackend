@@ -5,5 +5,5 @@ export interface User {
     password: string;     
     role?: string;        
     registrationDate?: Date; 
-    status?: string;       
+    status?: boolean;       
 }

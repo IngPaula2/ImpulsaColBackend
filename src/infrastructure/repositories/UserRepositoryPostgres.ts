@@ -7,10 +7,10 @@ export class UserRepositoryPostgres implements UserRepository {
 
     async create(user: User): Promise<User> {
         const result = await pool.query(
-            `INSERT INTO usuario (nombre, email, contraseña, rol, fecharegistro, estado)
-            VALUES ($1, $2, $3, $4, NOW(), $5)
+            `INSERT INTO usuario (nombre, email, contraseña, rol, fecharegistro)
+            VALUES ($1, $2, $3, $4, NOW())
             RETURNING userid, nombre, email, contraseña, rol, fecharegistro, estado`,
-            [user.name, user.email, user.password, user.role || 'user', user.status || 'active']
+            [user.name, user.email, user.password, user.role || 'user']
         );
         const row = result.rows[0];
         return {
