@@ -4,7 +4,7 @@ const app = express();
 const port = 3000;
 
 app.get('/', (_req, res) => {
-    res.send('¡ImpulsoCol Backend está funcionando!');
+    res.send('¡ImpulsaCol Backend está funcionando!');
 });
 
 app.listen(port, () => {
