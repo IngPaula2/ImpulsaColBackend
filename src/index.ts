@@ -7,6 +7,10 @@ import { UserAdapter } from './infrastructure/adapter/UserAdapter';
 import { UserApplicationService } from './application/UserApplicationService';
 import { UserController } from './infrastructure/controllers/UserController';
 import { createUserRouter } from './infrastructure/routes/userRoutes';
+import { AuthService } from './application/AuthService';
+import { AuthController } from './infrastructure/controllers/AuthController';
+import { createAuthRouter } from './infrastructure/routes/authRoutes';
+import { authMiddleware } from './infrastructure/middlewares/authMiddleware';
 
 const app = express();
 app.use(express.json());
@@ -21,9 +25,19 @@ AppDataSource.initialize()
         const userAdapter = new UserAdapter(userRepository);
         const userApplicationService = new UserApplicationService(userAdapter);
         const userController = new UserController(userApplicationService);
+        
+        // Servicios de autenticación
+        const authService = new AuthService(userAdapter);
+        const authController = new AuthController(authService);
 
-        // Configurar rutas
+        // Rutas públicas
+        app.use('/api/auth', createAuthRouter(authController));
         app.use('/api/users', createUserRouter(userController));
+
+        // Ejemplo de ruta protegida
+        app.get('/api/protected', authMiddleware(authService), (req, res) => {
+            res.json({ message: 'Esta es una ruta protegida' });
+        });
 
         // Iniciar servidor
         const PORT = process.env.PORT || 3000;

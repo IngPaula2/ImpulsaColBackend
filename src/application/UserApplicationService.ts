@@ -1,5 +1,6 @@
 import { User } from '../domain/User';
 import { UserPort } from '../domain/UserPort';
+import { UserValidators } from '../domain/validators/UserValidators';
 import * as bcrypt from 'bcrypt';
 
 export class UserApplicationService {
@@ -18,12 +19,10 @@ export class UserApplicationService {
         country?: string;
         birth_date?: Date;
     }): Promise<User> {
-        if (!userData.email) {
-            throw new Error('Email is required');
-        }
-
-        if (!userData.password) {
-            throw new Error('Password is required');
+        // Validar todos los campos
+        const validation = UserValidators.validateUserData(userData);
+        if (!validation.isValid) {
+            throw new Error(validation.errors.join(', '));
         }
 
         // Verificar si el usuario ya existe

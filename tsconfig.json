@@ -11,8 +11,16 @@
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "types": ["node", "express"],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/infrastructure/types"
+    ]
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*",
+    "src/infrastructure/types/*.d.ts"
+  ],
   "exclude": ["node_modules"]
 }
