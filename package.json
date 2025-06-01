@@ -7,7 +7,11 @@
     "start": "ts-node src/index.ts",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "npm run typeorm migration:generate",
+    "migration:run": "npm run typeorm migration:run -- -d src/infrastructure/config/database.ts",
+    "migration:revert": "npm run typeorm migration:revert -- -d src/infrastructure/config/database.ts"
   },
   "keywords": [],
   "author": "",
