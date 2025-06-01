@@ -43,4 +43,39 @@ export class UserApplicationService {
 
         return user;
     }
+
+    async getProfile(userId: number): Promise<User> {
+        const user = await this.userPort.findById(userId);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return user;
+    }
+
+    async updateProfile(userId: number, userData: Partial<User>): Promise<User> {
+        // Verificar que el usuario existe
+        const existingUser = await this.userPort.findById(userId);
+        if (!existingUser) {
+            throw new Error('User not found');
+        }
+
+        // Si se está actualizando el email, verificar que no exista otro usuario con ese email
+        if (userData.email && userData.email !== existingUser.email) {
+            const userWithEmail = await this.userPort.findByEmail(userData.email);
+            if (userWithEmail) {
+                throw new Error('Email already in use');
+            }
+        }
+
+        // Validar solo los campos que se están actualizando
+        const fieldsToValidate = { ...userData };
+        const validation = UserValidators.validatePartialUserData(fieldsToValidate);
+        if (!validation.isValid) {
+            throw new Error(validation.errors.join(', '));
+        }
+
+        // Actualizar el usuario
+        const updatedUser = await this.userPort.update(userId, userData);
+        return updatedUser;
+    }
 } 

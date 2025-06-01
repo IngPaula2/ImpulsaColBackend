@@ -22,6 +22,15 @@ export class UserAdapter implements UserPort {
         return userEntity ? this.mapToUser(userEntity) : null;
     }
 
+    async update(id: number, userData: Partial<User>): Promise<User> {
+        await this.userRepository.update(id, userData);
+        const updatedUser = await this.userRepository.findOne({ where: { id } });
+        if (!updatedUser) {
+            throw new Error('User not found after update');
+        }
+        return this.mapToUser(updatedUser);
+    }
+
     private mapToUser(entity: UserEntity): User {
         const user: User = {};
         

@@ -111,4 +111,50 @@ export class UserValidators {
             errors
         };
     }
+
+    static validatePartialUserData(userData: Partial<any>): { isValid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        // Solo validamos los campos que están presentes en la actualización
+        if (userData.email !== undefined && !this.isValidEmail(userData.email)) {
+            errors.push('El email no es válido');
+        }
+
+        if (userData.full_name !== undefined && !this.isValidFullName(userData.full_name)) {
+            errors.push('El nombre completo solo debe contener letras y espacios (mínimo 3 caracteres)');
+        }
+
+        if (userData.document_type !== undefined && !this.isValidDocumentType(userData.document_type)) {
+            errors.push('El tipo de documento debe ser CC, CE, TI o PP');
+        }
+
+        if (userData.document_number !== undefined && !this.isValidDocumentNumber(userData.document_number)) {
+            errors.push('El número de documento debe tener entre 6 y 12 dígitos');
+        }
+
+        if (userData.phone !== undefined && !this.isValidPhone(userData.phone)) {
+            errors.push('El teléfono debe ser un número válido de 10 dígitos comenzando con 3');
+        }
+
+        if (userData.address !== undefined && !this.isValidAddress(userData.address)) {
+            errors.push('La dirección debe contener caracteres válidos');
+        }
+
+        if (userData.city !== undefined && !this.isValidCityOrDepartment(userData.city)) {
+            errors.push('La ciudad debe contener solo letras y espacios');
+        }
+
+        if (userData.department !== undefined && !this.isValidCityOrDepartment(userData.department)) {
+            errors.push('El departamento debe contener solo letras y espacios');
+        }
+
+        if (userData.birth_date !== undefined && !this.isValidBirthDate(new Date(userData.birth_date))) {
+            errors.push('Debe ser mayor de 18 años');
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors
+        };
+    }
 } 
