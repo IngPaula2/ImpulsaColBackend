@@ -14,65 +14,64 @@ export class CreateUserTable1710123456789 implements MigrationInterface {
                         generationStrategy: "increment"
                     },
                     {
-                        name: "full_name",
-                        type: "text",
-                        isNullable: true
-                    },
-                    {
                         name: "email",
-                        type: "text",
-                        isNullable: true
+                        type: "varchar",
+                        isUnique: true,
+                        isNullable: false
                     },
                     {
                         name: "password_hash",
-                        type: "text",
-                        isNullable: true
+                        type: "varchar",
+                        isNullable: false
+                    },
+                    {
+                        name: "full_name",
+                        type: "varchar",
+                        isNullable: false
                     },
                     {
                         name: "document_type",
-                        type: "text",
+                        type: "varchar",
                         isNullable: true
                     },
                     {
                         name: "document_number",
-                        type: "text",
+                        type: "varchar",
                         isNullable: true
                     },
                     {
                         name: "phone",
-                        type: "text",
+                        type: "varchar",
                         isNullable: true
                     },
                     {
                         name: "address",
-                        type: "text",
+                        type: "varchar",
                         isNullable: true
                     },
                     {
                         name: "city",
-                        type: "text",
+                        type: "varchar",
                         isNullable: true
                     },
                     {
                         name: "department",
-                        type: "text",
+                        type: "varchar",
                         isNullable: true
                     },
                     {
                         name: "country",
-                        type: "text",
-                        isNullable: true,
-                        default: "'Colombia'"
+                        type: "varchar",
+                        isNullable: true
                     },
                     {
                         name: "birth_date",
-                        type: "date",
+                        type: "timestamp",
                         isNullable: true
                     },
                     {
                         name: "created_at",
                         type: "timestamp",
-                        isNullable: true,
                         default: "now()"
                     }
                 ]

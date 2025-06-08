@@ -1,19 +1,38 @@
 import express from 'express';
 import http from 'http';
+import cors from 'cors';
 import { AppDataSource } from '../config/database';
-import { UserEntity } from '../entities/User';
-import { UserAdapter } from '../adapter/UserAdapter';
-import { UserApplicationService } from '../../application/UserApplicationService';
-import { UserController } from '../controllers/UserController';
-import { AuthService } from '../../application/AuthService';
-import { AuthController } from '../controllers/AuthController';
-import { createAuthRouter } from '../routes/authRoutes';
-import { createUserRouter } from '../routes/userRoutes';
+import { UserEntity } from '../persistence/entities/UserEntity';
+import { TypeORMUserRepository } from '../persistence/repositories/TypeORMUserRepository';
+import { UserApplicationService } from '../../application/services/UserService';
+import { UserController } from '../web/controllers/UserController';
+import { JWTAuthService } from '../adapters/security/JWTAuthService';
+import { createUserRoutes } from '../web/routes/userRoutes';
 import { authMiddleware } from '../middlewares/authMiddleware';
+import { UserDomainService } from '../../domain/services/UserDomainService';
 
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
         this.app.use(express.json());
+        this.app.use(cors({
+            origin: [
+                'http://localhost:19000',  // Expo en desarrollo
+                'http://localhost:19006',  // Expo en web
+                'http://localhost:8081',   // Metro bundler
+                'http://192.168.20.48:8081', // IP local
+                'exp://192.168.20.48:8081'  // Expo en dispositivo
+            ],
+            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            allowedHeaders: ['Content-Type', 'Authorization'],
+            credentials: true,
+            optionsSuccessStatus: 200
+        }));
+
+        // Middleware para logging de peticiones
+        this.app.use((req, res, next) => {
+            console.log(`${req.method} ${req.path} - Origin: ${req.get('origin')}`);
+            next();
+        });
     }
 
     async initializeDatabase(): Promise<void> {
@@ -27,19 +46,28 @@ export class ServerBootstrap {
     }
 
     setupRoutes(): void {
-        // Inicializar dependencias
+        // Inicializar adaptadores
         const userRepository = AppDataSource.getRepository(UserEntity);
-        const userAdapter = new UserAdapter(userRepository);
-        const userApplicationService = new UserApplicationService(userAdapter);
-        const userController = new UserController(userApplicationService);
+        const userRepositoryAdapter = new TypeORMUserRepository(userRepository);
+        const authService = new JWTAuthService();
         
-        // Servicios de autenticación
-        const authService = new AuthService(userAdapter);
-        const authController = new AuthController(authService);
+        // Inicializar servicio de dominio
+        const userDomainService = new UserDomainService(
+            userRepositoryAdapter,
+            authService
+        );
 
-        // Rutas públicas
-        this.app.use('/api/auth', createAuthRouter(authController));
-        this.app.use('/api/users', createUserRouter(userController, authService));
+        // Inicializar servicio de aplicación
+        const userApplicationService = new UserApplicationService(
+            userDomainService,
+            authService
+        );
+
+        // Inicializar controladores
+        const userController = new UserController(userApplicationService);
+
+        // Configurar rutas
+        this.app.use('/api/auth', createUserRoutes(userController));
 
         // Ejemplo de ruta protegida
         this.app.get('/api/protected', authMiddleware(authService), (req, res) => {

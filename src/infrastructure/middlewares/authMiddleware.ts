@@ -1,30 +1,32 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../../application/AuthService';
-import { ExpressAuthAdapter } from '../adapter/ExpressAuthAdapter';
-import { IAuthenticatedUser } from '../../domain/interfaces/IAuthenticatedRequest';
+import { IAuthenticationService } from '../../domain/ports/IUserRepository';
 
 // Tipo personalizado que extiende Request
-type RequestWithUser = Request & {
-    user?: IAuthenticatedUser;
-};
+interface RequestWithUser extends Request {
+    user?: {
+        userId: number;
+        email: string;
+    };
+}
 
-export const authMiddleware = (authService: AuthService) => {
+export const authMiddleware = (authService: IAuthenticationService) => {
     return async (req: RequestWithUser, res: Response, next: NextFunction) => {
         try {
-            const token = ExpressAuthAdapter.getAuthorizationToken(req);
-            
-            if (!token) {
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
                 return res.status(401).json({
                     success: false,
                     message: 'No token provided'
                 });
             }
 
+            const token = authHeader.split(' ')[1];
             const decoded = authService.verifyToken(token);
-            ExpressAuthAdapter.setAuthenticatedUser(req, {
+            
+            req.user = {
                 userId: decoded.userId,
                 email: decoded.email
-            });
+            };
             
             next();
         } catch (error) {

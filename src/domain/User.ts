@@ -12,4 +12,5 @@ export interface User {
     country?: string;
     birth_date?: Date;
     created_at?: Date;
+    metadata?: any;
 } 
