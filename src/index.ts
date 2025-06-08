@@ -1,12 +1,16 @@
+import 'reflect-metadata';
+import 'dotenv/config';
 import express from 'express';
+import { ServerBootstrap } from './infrastructure/bootstrap/ServerBootstrap';
 
 const app = express();
-const port = 3000;
+const server = new ServerBootstrap(app);
 
-app.get('/', (_req, res) => {
-    res.send('¡ImpulsaCol Backend está funcionando!');
-});
-
-app.listen(port, () => {
-    console.log(`Servidor corriendo en http://localhost:${port}`);
-});
+server.init()
+    .then(() => {
+        console.log('Server initialized successfully');
+    })
+    .catch((error) => {
+        console.error('Failed to initialize server:', error);
+        process.exit(1);
+    });
