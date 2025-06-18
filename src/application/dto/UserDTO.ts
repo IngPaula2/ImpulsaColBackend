@@ -3,6 +3,9 @@ export interface UserDTO {
     email: string;
     full_name: string;
     metadata?: UserMetadataDTO;
+    notifications_enabled?: boolean;
+    last_login?: Date;
+    password_hash?: string;
 }
 
 export interface UserMetadataDTO {

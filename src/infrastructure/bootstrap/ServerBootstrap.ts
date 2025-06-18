@@ -10,10 +10,22 @@ import { JWTAuthService } from '../adapters/security/JWTAuthService';
 import { createUserRoutes } from '../web/routes/userRoutes';
 import { authMiddleware } from '../middlewares/authMiddleware';
 import { UserDomainService } from '../../domain/services/UserDomainService';
+import { TypeORMUserRoleRepository } from '../persistence/repositories/TypeORMUserRoleRepository';
+import { UserRoleService } from '../../application/services/UserRoleService';
+import entrepreneurshipRoutes from '../web/routes/entrepreneurshipRoutes';
+import productRoutes from '../web/routes/productRoutes';
+import investmentIdeaRoutes from '../web/routes/investmentIdeaRoutes';
 
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
-        this.app.use(express.json());
+        // Middleware para logging de peticiones (debe ir primero)
+        this.app.use((req, res, next) => {
+            console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.get('origin')} - Body:`, req.body);
+            next();
+        });
+
+        this.app.use(express.json({ limit: '10mb' }));
+        this.app.use(express.urlencoded({ limit: '10mb', extended: true }));
         this.app.use(cors({
             origin: [
                 'http://localhost:19000',  // Expo en desarrollo
@@ -27,12 +39,6 @@ export class ServerBootstrap {
             credentials: true,
             optionsSuccessStatus: 200
         }));
-
-        // Middleware para logging de peticiones
-        this.app.use((req, res, next) => {
-            console.log(`${req.method} ${req.path} - Origin: ${req.get('origin')}`);
-            next();
-        });
     }
 
     async initializeDatabase(): Promise<void> {
@@ -63,11 +69,20 @@ export class ServerBootstrap {
             authService
         );
 
+        // Inicializar adaptador y servicio de roles
+        const userRoleRepository = new TypeORMUserRoleRepository(AppDataSource);
+        const userRoleService = new UserRoleService(userRoleRepository);
+
         // Inicializar controladores
-        const userController = new UserController(userApplicationService);
+        const userController = new UserController(userApplicationService, userRoleService);
 
         // Configurar rutas
-        this.app.use('/api/auth', createUserRoutes(userController));
+        this.app.use('/api/users', createUserRoutes(userController));
+
+        // Rutas protegidas con autenticación
+        this.app.use('/api/entrepreneurships', authMiddleware(authService), entrepreneurshipRoutes);
+        this.app.use('/api/products', authMiddleware(authService), productRoutes);
+        this.app.use('/api/investment-ideas', authMiddleware(authService), investmentIdeaRoutes);
 
         // Ejemplo de ruta protegida
         this.app.get('/api/protected', authMiddleware(authService), (req, res) => {

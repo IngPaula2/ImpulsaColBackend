@@ -1,5 +1,5 @@
 import { User, UserRegistrationData } from '../models/User';
-import { IUserRepository, IAuthenticationService } from '../ports/IUserRepository';
+import { IUserRepository, IAuthenticationService, UserUpdateData } from '../ports/IUserRepository';
 
 export class UserDomainService {
     constructor(
@@ -23,21 +23,27 @@ export class UserDomainService {
     }
 
     async validateCredentials(email: string, password: string): Promise<User> {
+        console.log('Validando credenciales para email:', email);
         const user = await this.userRepository.findByEmail(email);
         
         if (!user) {
+            console.log('Usuario no encontrado');
             throw new Error('Credenciales inválidas');
         }
 
+        console.log('Usuario encontrado, verificando contraseña');
         const isValidPassword = await this.authService.comparePasswords(
             password,
             user.password_hash || ''
         );
 
+        console.log('Resultado de la validación de contraseña:', isValidPassword);
         if (!isValidPassword) {
+            console.log('Contraseña inválida');
             throw new Error('Credenciales inválidas');
         }
 
+        console.log('Credenciales válidas');
         return user;
     }
 
@@ -89,5 +95,36 @@ export class UserDomainService {
     private isValidEmail(email: string): boolean {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
+    }
+
+    // Nuevo: obtener usuario por id
+    async findById(id: number): Promise<User | null> {
+        return this.userRepository.findById(id);
+    }
+
+    // Nuevo: actualizar usuario por id
+    async updateUser(id: number, updateData: UserUpdateData): Promise<User> {
+        console.log('UserDomainService.updateUser - Iniciando actualización');
+        console.log('UserDomainService.updateUser - updateData:', updateData);
+        
+        // Validar campos individuales si existen
+        if (updateData.document_type && !['CC', 'CE', 'TI', 'PP'].includes(updateData.document_type)) {
+            throw new Error('Tipo de documento inválido');
+        }
+        if (updateData.document_number && !/^\d{6,12}$/.test(updateData.document_number)) {
+            throw new Error('Número de documento inválido');
+        }
+        if (updateData.phone) {
+            console.log('UserDomainService.updateUser - Validando teléfono:', updateData.phone);
+            const cleanPhone = updateData.phone.replace(/[\s-]/g, '');
+            if (!/^3\d{9}$/.test(cleanPhone)) {
+                throw new Error('El número de teléfono debe comenzar con 3 y tener 10 dígitos');
+            }
+            updateData.phone = cleanPhone;
+            console.log('UserDomainService.updateUser - Teléfono validado:', cleanPhone);
+        }
+        
+        console.log('UserDomainService.updateUser - Llamando al repositorio');
+        return this.userRepository.update(id, updateData);
     }
 } 

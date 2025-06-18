@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { IUserRepository } from '../../../domain/ports/IUserRepository';
+import { IUserRepository, UserUpdateData } from '../../../domain/ports/IUserRepository';
 import { User, UserRegistrationData } from '../../../domain/models/User';
 import { UserEntity } from '../entities/UserEntity';
 
@@ -18,7 +18,9 @@ export class TypeORMUserRepository implements IUserRepository {
             city: userData.metadata?.city,
             department: userData.metadata?.department,
             country: userData.metadata?.country,
-            birth_date: userData.metadata?.birth_date ? new Date(userData.metadata.birth_date) : undefined
+            birth_date: userData.metadata?.birth_date ? new Date(userData.metadata.birth_date) : undefined,
+            notifications_enabled: userData.metadata?.notifications_enabled ?? false,
+            last_login: userData.metadata?.last_login ? new Date(userData.metadata.last_login) : undefined
         });
 
         const savedUser = await this.repository.save(userEntity);
@@ -35,7 +37,7 @@ export class TypeORMUserRepository implements IUserRepository {
         return userEntity ? this.mapToUser(userEntity) : null;
     }
 
-    async update(id: number, userData: Partial<User>): Promise<User> {
+    async update(id: number, userData: UserUpdateData): Promise<User> {
         await this.repository.update(id, userData);
         const updatedUser = await this.repository.findOne({ where: { id } });
         if (!updatedUser) {
@@ -62,7 +64,9 @@ export class TypeORMUserRepository implements IUserRepository {
             password_hash: entity.password_hash,
             full_name: entity.full_name,
             metadata,
-            created_at: entity.created_at
+            created_at: entity.created_at,
+            notifications_enabled: entity.notifications_enabled,
+            last_login: entity.last_login
         };
     }
 } 

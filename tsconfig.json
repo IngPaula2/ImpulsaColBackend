@@ -12,10 +12,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
-    "types": ["node", "express"],
+    // "types": ["node", "express"],
     "typeRoots": [
       "./node_modules/@types",
-      "./src/infrastructure/types"
+      "./src/types"
     ]
   },
   "include": [
