@@ -38,6 +38,12 @@ export class UserEntity {
     @Column({ type: 'timestamp', nullable: true })
     birth_date?: Date;
 
+    @Column({ default: false })
+    notifications_enabled!: boolean;
+
+    @Column({ type: 'timestamp', nullable: true })
+    last_login?: Date;
+
     @CreateDateColumn({ name: 'created_at' })
     created_at!: Date;
 } 

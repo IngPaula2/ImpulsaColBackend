@@ -5,6 +5,8 @@ export interface User {
     full_name: string;
     metadata?: UserMetadata;
     created_at?: Date;
+    notifications_enabled?: boolean;
+    last_login?: Date;
 }
 
 export interface UserMetadata {
@@ -16,6 +18,8 @@ export interface UserMetadata {
     department?: string;
     country?: string;
     birth_date?: Date;
+    notifications_enabled?: boolean;
+    last_login?: Date;
 }
 
 // Value Objects

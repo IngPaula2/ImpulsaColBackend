@@ -1,6 +1,8 @@
 import { DataSource } from 'typeorm';
 import { UserEntity } from '../persistence/entities/UserEntity';
-import { CreateUserTable1710123456789 } from '../migrations/1710123456789-CreateUserTable';
+import { EntrepreneurshipEntity } from '../persistence/entities/EntrepreneurshipEntity';
+import { ProductEntity } from '../persistence/entities/ProductEntity';
+import { InvestmentIdeaEntity } from '../persistence/entities/InvestmentIdeaEntity';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -12,9 +14,14 @@ export const AppDataSource = new DataSource({
     username: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_DATABASE || 'impulsacol',
-    entities: [UserEntity],
+    entities: [
+        UserEntity,
+        EntrepreneurshipEntity,
+        ProductEntity,
+        InvestmentIdeaEntity
+    ],
     synchronize: false, // Cambiado a false para prevenir pérdida de datos
     logging: true,
-    migrations: [CreateUserTable1710123456789],
+    migrations: ['src/infrastructure/migrations/*.ts'],
     migrationsRun: true // Ejecutará las migraciones al iniciar
 }); 

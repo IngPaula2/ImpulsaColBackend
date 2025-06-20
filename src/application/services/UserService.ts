@@ -44,6 +44,13 @@ export class UserApplicationService {
                 loginData.password
             );
 
+            if (!user) {
+                throw new Error('Credenciales inválidas');
+            }
+
+            // Actualizar last_login
+            await this.userDomainService.updateUser(user.id!, { last_login: new Date() });
+
             const token = this.authService.generateToken(user);
 
             return {
@@ -76,5 +83,69 @@ export class UserApplicationService {
             ...domain,
             birth_date: domain.birth_date?.toISOString()
         };
+    }
+
+    // Nuevo: obtener usuario por id
+    async findById(id: number): Promise<UserDTO | null> {
+        const user = await this.userDomainService.findById(id);
+        return user ? this.mapToUserDTO(user) : null;
+    }
+
+    // Nuevo: actualizar usuario
+    async update(userId: number, updateData: Partial<UserDTO>): Promise<UserDTO> {
+        console.log('UserService.update - Iniciando actualización de usuario');
+        console.log('UserService.update - userId:', userId);
+        console.log('UserService.update - updateData:', updateData);
+        
+        // Mapear los datos para la entidad (no metadata como objeto)
+        const entityUpdateData: any = { ...updateData };
+        
+        // Si hay metadata, mapear sus campos a propiedades individuales
+        if (updateData.metadata) {
+            console.log('UserService.update - Mapeando campos de metadata a propiedades individuales');
+            delete entityUpdateData.metadata; // Eliminar el objeto metadata
+            
+            // Mapear campos individuales
+            if (updateData.metadata.document_type) {
+                entityUpdateData.document_type = updateData.metadata.document_type;
+            }
+            if (updateData.metadata.document_number) {
+                entityUpdateData.document_number = updateData.metadata.document_number;
+            }
+            if (updateData.metadata.phone) {
+                entityUpdateData.phone = updateData.metadata.phone;
+            }
+            if (updateData.metadata.address) {
+                entityUpdateData.address = updateData.metadata.address;
+            }
+            if (updateData.metadata.city) {
+                entityUpdateData.city = updateData.metadata.city;
+            }
+            if (updateData.metadata.department) {
+                entityUpdateData.department = updateData.metadata.department;
+            }
+            if (updateData.metadata.country) {
+                entityUpdateData.country = updateData.metadata.country;
+            }
+            if (updateData.metadata.birth_date) {
+                entityUpdateData.birth_date = new Date(updateData.metadata.birth_date);
+            }
+        }
+        
+        console.log('UserService.update - Datos mapeados para entidad:', entityUpdateData);
+        console.log('UserService.update - Llamando al dominio');
+        
+        const updatedUser = await this.userDomainService.updateUser(userId, entityUpdateData);
+        
+        console.log('UserService.update - Usuario actualizado en dominio, mapeando respuesta');
+        return this.mapToUserDTO(updatedUser);
+    }
+
+    // Métodos públicos para contraseñas
+    async comparePasswords(plain: string, hash: string): Promise<boolean> {
+        return this.authService.comparePasswords(plain, hash);
+    }
+    async hashPassword(password: string): Promise<string> {
+        return this.authService.hashPassword(password);
     }
 } 

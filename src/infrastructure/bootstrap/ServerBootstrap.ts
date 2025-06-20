@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import path from 'path';
 import { AppDataSource } from '../config/database';
 import { UserEntity } from '../persistence/entities/UserEntity';
 import { TypeORMUserRepository } from '../persistence/repositories/TypeORMUserRepository';
@@ -10,10 +11,32 @@ import { JWTAuthService } from '../adapters/security/JWTAuthService';
 import { createUserRoutes } from '../web/routes/userRoutes';
 import { authMiddleware } from '../middlewares/authMiddleware';
 import { UserDomainService } from '../../domain/services/UserDomainService';
+import { TypeORMUserRoleRepository } from '../persistence/repositories/TypeORMUserRoleRepository';
+import { UserRoleService } from '../../application/services/UserRoleService';
+import investmentIdeaRoutes from '../web/routes/investmentIdeaRoutes';
+import { IUserRepository, IAuthenticationService } from '../../domain/ports/IUserRepository';
+import { TypeORMProductRepository } from '../persistence/repositories/TypeORMProductRepository';
+import { ProductService } from '../../application/services/ProductService';
+import { ProductController } from '../web/controllers/ProductController';
+import { EntrepreneurshipService } from '../../application/services/EntrepreneurshipService';
+import { EntrepreneurshipController } from '../web/controllers/EntrepreneurshipController';
+import { TypeORMEntrepreneurshipRepository } from '../persistence/repositories/TypeORMEntrepreneurshipRepository';
+import { IProductRepository } from '../../domain/ports/IProductRepository';
+import { IEntrepreneurshipRepository } from '../../domain/ports/IEntrepreneurshipRepository';
+import { productRoutes } from '../web/routes/productRoutes';
+import { entrepreneurshipRoutes } from '../web/routes/entrepreneurshipRoutes';
 
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
-        this.app.use(express.json());
+        // Middleware para logging de peticiones (debe ir primero)
+        this.app.use((req, res, next) => {
+            console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.get('origin')} - Body:`, req.body);
+            next();
+        });
+
+        // Servir archivos estáticos desde la carpeta 'uploads'
+        this.app.use('/uploads', express.static(path.join(__dirname, '../../../uploads')));
+
         this.app.use(cors({
             origin: [
                 'http://localhost:19000',  // Expo en desarrollo
@@ -27,12 +50,6 @@ export class ServerBootstrap {
             credentials: true,
             optionsSuccessStatus: 200
         }));
-
-        // Middleware para logging de peticiones
-        this.app.use((req, res, next) => {
-            console.log(`${req.method} ${req.path} - Origin: ${req.get('origin')}`);
-            next();
-        });
     }
 
     async initializeDatabase(): Promise<void> {
@@ -48,8 +65,8 @@ export class ServerBootstrap {
     setupRoutes(): void {
         // Inicializar adaptadores
         const userRepository = AppDataSource.getRepository(UserEntity);
-        const userRepositoryAdapter = new TypeORMUserRepository(userRepository);
-        const authService = new JWTAuthService();
+        const userRepositoryAdapter: IUserRepository = new TypeORMUserRepository(userRepository);
+        const authService: IAuthenticationService = new JWTAuthService();
         
         // Inicializar servicio de dominio
         const userDomainService = new UserDomainService(
@@ -63,11 +80,30 @@ export class ServerBootstrap {
             authService
         );
 
+        // Inicializar adaptador y servicio de roles
+        const userRoleRepository = new TypeORMUserRoleRepository(AppDataSource);
+        const userRoleService = new UserRoleService(userRoleRepository);
+
         // Inicializar controladores
-        const userController = new UserController(userApplicationService);
+        const userController = new UserController(userApplicationService, userRoleService);
+
+        const productRepository: IProductRepository = new TypeORMProductRepository(AppDataSource);
+        const productService = new ProductService(productRepository);
+        const productController = new ProductController(productService);
+
+        const entrepreneurshipRepository: IEntrepreneurshipRepository = new TypeORMEntrepreneurshipRepository(AppDataSource);
+        const entrepreneurshipService = new EntrepreneurshipService(entrepreneurshipRepository, productRepository);
+        const entrepreneurshipController = new EntrepreneurshipController(entrepreneurshipService);
+
+        // Body parser para JSON y urlencoded (debe ir ANTES de las rutas normales, DESPUÉS de las de archivos)
+        this.app.use(express.json({ limit: '10mb' }));
+        this.app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
         // Configurar rutas
-        this.app.use('/api/auth', createUserRoutes(userController));
+        this.app.use('/api/users', createUserRoutes(userController));
+        this.app.use('/api/entrepreneurships', authMiddleware(authService), entrepreneurshipRoutes(entrepreneurshipController));
+        this.app.use('/api/products', authMiddleware(authService), productRoutes(productController));
+        this.app.use('/api/investment-ideas', authMiddleware(authService), investmentIdeaRoutes);
 
         // Ejemplo de ruta protegida
         this.app.get('/api/protected', authMiddleware(authService), (req, res) => {
