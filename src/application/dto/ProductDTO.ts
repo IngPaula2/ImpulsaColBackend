@@ -3,7 +3,7 @@ export interface CreateProductDTO {
   name: string;
   description: string;
   price: number;
-  images?: string;
+  images?: string[];
   wants_investor?: boolean;
   investment_value?: number;
   investor_message?: string;
@@ -15,7 +15,7 @@ export interface ProductResponseDTO {
   name: string;
   description: string;
   price: number;
-  images?: string;
+  images?: string[];
   wants_investor?: boolean;
   investment_value?: number;
   investor_message?: string;

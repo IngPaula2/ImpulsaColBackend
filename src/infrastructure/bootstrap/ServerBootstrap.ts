@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import path from 'path';
 import { AppDataSource } from '../config/database';
 import { UserEntity } from '../persistence/entities/UserEntity';
 import { TypeORMUserRepository } from '../persistence/repositories/TypeORMUserRepository';
@@ -26,6 +27,10 @@ export class ServerBootstrap {
 
         this.app.use(express.json({ limit: '10mb' }));
         this.app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+        // Servir archivos estáticos desde la carpeta 'uploads'
+        this.app.use('/uploads', express.static(path.join(__dirname, '../../../uploads')));
+
         this.app.use(cors({
             origin: [
                 'http://localhost:19000',  // Expo en desarrollo

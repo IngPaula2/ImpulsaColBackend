@@ -22,8 +22,8 @@ export class ProductEntity {
   @Column({ type: 'numeric', precision: 12, scale: 2 })
   price!: number;
 
-  @Column({ nullable: true })
-  images!: string;
+  @Column({ type: 'text', array: true, nullable: true })
+  images!: string[];
 
   @Column({ type: 'boolean', default: false })
   wants_investor!: boolean;
