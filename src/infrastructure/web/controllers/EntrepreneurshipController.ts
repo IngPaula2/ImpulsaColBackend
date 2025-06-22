@@ -86,7 +86,7 @@ export class EntrepreneurshipController {
       if (!req.file) {
         return res.status(400).json({ success: false, message: 'No se ha subido ninguna imagen' });
       }
-      const imageUrl = `/uploads/entrepreneurships/${req.file.filename}`;
+      const imageUrl = req.file.path;
       const result = await this.service.updateCoverImage(id, imageUrl);
       res.status(200).json({ success: true, data: result });
     } catch (error) {

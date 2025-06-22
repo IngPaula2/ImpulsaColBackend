@@ -5,15 +5,16 @@ import express from 'express';
 
 export const productRoutes = (controller: ProductController) => {
     const router = Router();
+    const jsonParser = express.json();
 
     // Crear producto
-    router.post('/', controller.create);
+    router.post('/', jsonParser, controller.create);
     // Listar todos los productos
     router.get('/', controller.findAll);
     // Obtener producto por ID
     router.get('/:id', controller.findById);
     // Actualizar producto por ID
-    router.put('/:id', controller.update);
+    router.put('/:id', jsonParser, controller.update);
     // Eliminar producto por ID
     router.delete('/:id', controller.delete);
 
@@ -26,7 +27,7 @@ export const productRoutes = (controller: ProductController) => {
     // Eliminar imagen de producto
     router.delete(
         '/:id/images',
-        express.json(),
+        jsonParser,
         controller.removeImage
     );
 

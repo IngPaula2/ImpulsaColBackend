@@ -92,8 +92,8 @@ export class ProductController {
             return res.status(400).json({ success: false, message: 'No se han subido imágenes' });
         }
         let result;
-        for (const file of req.files) {
-            const imageUrl = `/uploads/products/${file.filename}`;
+        for (const file of req.files as Express.Multer.File[]) {
+            const imageUrl = file.path;
             result = await this.service.addImage(id, imageUrl);
         }
         res.status(200).json({ success: true, data: result });
@@ -169,7 +169,7 @@ export class ProductController {
       console.log('PUT /api/products/:id/images req.files:', req.files);
       console.log('PUT /api/products/:id/images req.body.existingImages:', req.body.existingImages);
       const uploadedImages = req.files && Array.isArray(req.files)
-        ? req.files.map((file: any) => `/uploads/products/${file.filename}`)
+        ? req.files.map((file: any) => file.path)
         : [];
       // URLs existentes
       let existingImages: string[] = [];

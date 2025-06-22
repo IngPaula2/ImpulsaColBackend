@@ -95,10 +95,6 @@ export class ServerBootstrap {
         const entrepreneurshipService = new EntrepreneurshipService(entrepreneurshipRepository, productRepository);
         const entrepreneurshipController = new EntrepreneurshipController(entrepreneurshipService);
 
-        // Body parser para JSON y urlencoded (debe ir ANTES de las rutas normales, DESPUÉS de las de archivos)
-        this.app.use(express.json({ limit: '10mb' }));
-        this.app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
         // Configurar rutas
         this.app.use('/api/users', createUserRoutes(userController));
         
