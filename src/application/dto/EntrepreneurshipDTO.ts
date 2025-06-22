@@ -12,7 +12,8 @@ export interface EntrepreneurshipResponseDTO {
   user_name: string;
   title: string;
   description: string;
-  category?: string;
-  cover_image?: string;
+  category?: string | null;
+  cover_image?: string | null;
   created_at: Date;
+  location: string;
 } 

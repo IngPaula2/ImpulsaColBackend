@@ -101,7 +101,17 @@ export class ServerBootstrap {
 
         // Configurar rutas
         this.app.use('/api/users', createUserRoutes(userController));
+        
+        // Rutas de emprendimientos - GET / no requiere autenticación
+        this.app.get('/api/entrepreneurships', (req, res) => {
+            entrepreneurshipController.findAll(req, res);
+        });
         this.app.use('/api/entrepreneurships', authMiddleware(authService), entrepreneurshipRoutes(entrepreneurshipController));
+        
+        // Rutas de productos - GET / no requiere autenticación
+        this.app.get('/api/products', (req, res) => {
+            productController.findAll(req, res);
+        });
         this.app.use('/api/products', authMiddleware(authService), productRoutes(productController));
         this.app.use('/api/investment-ideas', authMiddleware(authService), investmentIdeaRoutes);
 

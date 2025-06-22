@@ -20,6 +20,7 @@ export class EntrepreneurshipService {
             category: entity.category,
             cover_image: entity.cover_image,
             created_at: entity.created_at,
+            location: entity.user?.department || 'N/A',
         };
     }
 
