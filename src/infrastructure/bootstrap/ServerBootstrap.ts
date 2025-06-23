@@ -45,7 +45,7 @@ export class ServerBootstrap {
                 'http://192.168.20.48:8081', // IP local
                 'exp://192.168.20.48:8081'  // Expo en dispositivo
             ],
-            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization'],
             credentials: true,
             optionsSuccessStatus: 200
