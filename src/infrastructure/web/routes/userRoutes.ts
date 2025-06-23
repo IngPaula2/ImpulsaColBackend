@@ -3,6 +3,7 @@ import { UserController } from '../controllers/UserController';
 import { authMiddleware } from '../../middlewares/authMiddleware';
 import { JWTAuthService } from '../../adapters/security/JWTAuthService';
 import express from 'express';
+import { multerProfileConfig } from '../middlewares/multerProfileConfig';
 
 export const createUserRoutes = (userController: UserController): Router => {
     const router = Router();
@@ -13,6 +14,7 @@ export const createUserRoutes = (userController: UserController): Router => {
     router.post('/register', jsonParser, userController.register);
     router.post('/login', jsonParser, userController.login);
     router.post('/:id/roles', jsonParser, userController.assignRole);
+    router.get('/public-profile/:userId', userController.getPublicProfile);
 
     // Ruta protegida para obtener el perfil del usuario autenticado
     router.get('/me', authMiddleware(authService), userController.getProfile);
@@ -23,6 +25,8 @@ export const createUserRoutes = (userController: UserController): Router => {
     router.put('/me/notifications', authMiddleware(authService), jsonParser, userController.updateNotifications);
     // Ruta para cambio de contraseña
     router.put('/me/password', authMiddleware(authService), jsonParser, userController.changePassword);
+    // Ruta protegida para subir la imagen de perfil
+    router.put('/me/profile-image', authMiddleware(authService), multerProfileConfig.single('image'), userController.uploadProfileImage);
 
     return router;
 }; 

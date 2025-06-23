@@ -10,7 +10,7 @@ export class EntrepreneurshipEntity {
   @Column()
   user_id!: number;
 
-  @ManyToOne(() => UserEntity, user => user.id)
+  @ManyToOne(() => UserEntity, user => user.entrepreneurships)
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity;
 

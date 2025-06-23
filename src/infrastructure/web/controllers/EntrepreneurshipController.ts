@@ -26,6 +26,7 @@ export class EntrepreneurshipController {
   findAll = async (_req: Request, res: Response) => {
     try {
       const result = await this.service.findAll();
+      console.log('Datos de emprendimientos a enviar:', JSON.stringify(result, null, 2));
       res.status(200).json({ success: true, data: result });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

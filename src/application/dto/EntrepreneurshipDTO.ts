@@ -10,10 +10,11 @@ export interface EntrepreneurshipResponseDTO {
   id: number;
   user_id: number;
   user_name: string;
+  user_profile_image: string | null;
   title: string;
   description: string;
-  category?: string | null;
-  cover_image?: string | null;
+  category: string;
+  cover_image: string;
   created_at: Date;
   location: string;
 } 

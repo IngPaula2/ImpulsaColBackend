@@ -22,6 +22,7 @@ export interface IUserRepository {
     findByEmail(email: string): Promise<User | null>;
     findById(id: number): Promise<User | null>;
     update(id: number, userData: UserUpdateData): Promise<User>;
+    findUserWithEntrepreneurships(id: number): Promise<User | null>;
 }
 
 // Puerto secundario para servicios de autenticación

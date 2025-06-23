@@ -3,6 +3,8 @@ export interface User {
     email: string;
     password_hash?: string;
     full_name: string;
+    profile_image?: string;
+    entrepreneurships?: any[];
     metadata?: UserMetadata;
     created_at?: Date;
     notifications_enabled?: boolean;

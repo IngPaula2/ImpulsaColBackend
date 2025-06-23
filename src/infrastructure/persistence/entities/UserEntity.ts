@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { EntrepreneurshipEntity } from './EntrepreneurshipEntity';
 
 @Entity('users')
 export class UserEntity {
@@ -46,4 +47,10 @@ export class UserEntity {
 
     @CreateDateColumn({ name: 'created_at' })
     created_at!: Date;
+
+    @Column({ nullable: true })
+    profile_image?: string;
+
+    @OneToMany(() => EntrepreneurshipEntity, entrepreneurship => entrepreneurship.user)
+    entrepreneurships!: EntrepreneurshipEntity[];
 } 

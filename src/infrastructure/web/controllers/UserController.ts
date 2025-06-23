@@ -101,6 +101,7 @@ export class UserController {
 
         const userProfile = {
           ...user,
+          profile_image: user.profile_image || null,
           roles,
         };
 
@@ -175,6 +176,54 @@ export class UserController {
         res.status(200).json({ success: true, message: 'Contraseña actualizada correctamente' });
       } catch (error) {
         res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Error' });
+      }
+    };
+
+    // Obtener perfil público de un usuario por ID
+    getPublicProfile = async (req: Request, res: Response) => {
+      try {
+        const userId = Number(req.params.userId);
+        if (isNaN(userId)) {
+          return res.status(400).json({ success: false, message: 'ID inválido' });
+        }
+        const user = await this.userService.findPublicProfileById(userId);
+        if (!user) {
+          return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+        res.json({ success: true, data: user });
+      } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al obtener el perfil público' });
+      }
+    };
+
+    // Subir imagen de perfil
+    uploadProfileImage = async (req: AuthenticatedRequest, res: Response) => {
+      try {
+        const userId = req.user?.userId;
+        console.log('uploadProfileImage - userId:', userId);
+        console.log('uploadProfileImage - req.method:', req.method);
+        console.log('uploadProfileImage - req.headers:', req.headers);
+        console.log('uploadProfileImage - req.file:', req.file);
+        if (req.file) {
+          console.log('uploadProfileImage - req.file typeof:', typeof req.file);
+          if (typeof req.file === 'object') {
+            Object.entries(req.file as Record<string, any>).forEach(([key, value]) => {
+              console.log(`uploadProfileImage - req.file[${key}]:`, value);
+            });
+          }
+        }
+        console.log('uploadProfileImage - req.body:', req.body);
+        if (!userId) return res.status(401).json({ success: false, message: 'No autenticado' });
+        if (!req.file || !('path' in req.file)) {
+          console.error('uploadProfileImage - No se subió ninguna imagen o req.file.path no existe');
+          return res.status(400).json({ success: false, message: 'No se subió ninguna imagen', reqFile: req.file });
+        }
+        const imageUrl = (req.file as any).path;
+        const updatedUser = await this.userService.update(userId, { profile_image: imageUrl });
+        res.json({ success: true, data: { profile_image: updatedUser.profile_image } });
+      } catch (error) {
+        console.error('uploadProfileImage - Error:', error);
+        res.status(500).json({ success: false, message: 'Error al subir la imagen de perfil', error: error instanceof Error ? error.message : error });
       }
     };
 } 

@@ -46,6 +46,13 @@ export class TypeORMUserRepository implements IUserRepository {
         return this.mapToUser(updatedUser);
     }
 
+    async findUserWithEntrepreneurships(id: number): Promise<UserEntity | null> {
+        return this.repository.findOne({
+            where: { id },
+            relations: ['entrepreneurships']
+        });
+    }
+
     private mapToUser(entity: UserEntity): User {
         const metadata = {
             document_type: entity.document_type,
@@ -63,6 +70,7 @@ export class TypeORMUserRepository implements IUserRepository {
             email: entity.email,
             password_hash: entity.password_hash,
             full_name: entity.full_name,
+            profile_image: entity.profile_image,
             metadata,
             created_at: entity.created_at,
             notifications_enabled: entity.notifications_enabled,

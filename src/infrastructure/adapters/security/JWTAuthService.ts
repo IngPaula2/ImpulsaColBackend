@@ -1,6 +1,6 @@
 import { IAuthenticationService } from '../../../domain/ports/IUserRepository';
 import { User } from '../../../domain/models/User';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 
 export class JWTAuthService implements IAuthenticationService {

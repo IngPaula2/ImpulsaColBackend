@@ -112,4 +112,9 @@ export class UserDomainService {
         }
         return cleanPhone;
     }
+
+    // Obtener usuario con sus emprendimientos
+    async findUserWithEntrepreneurships(id: number): Promise<User | null> {
+        return this.userRepository.findUserWithEntrepreneurships(id);
+    }
 } 

@@ -15,6 +15,7 @@ export class EntrepreneurshipService {
             id: entity.id,
             user_id: entity.user_id,
             user_name: entity.user?.full_name || '',
+            user_profile_image: entity.user?.profile_image || null,
             title: entity.title,
             description: entity.description,
             category: entity.category,
