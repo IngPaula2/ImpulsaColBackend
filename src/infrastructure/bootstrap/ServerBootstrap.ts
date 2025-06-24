@@ -98,15 +98,10 @@ export class ServerBootstrap {
         // Configurar rutas
         this.app.use('/api/users', createUserRoutes(userController));
         
-        // Rutas públicas de emprendimientos (listado y detalle)
+        // Rutas de emprendimientos - GET / no requiere autenticación
         this.app.get('/api/entrepreneurships', (req, res) => {
             entrepreneurshipController.findAll(req, res);
         });
-        this.app.get('/api/entrepreneurships/:id', (req, res) => {
-            entrepreneurshipController.findById(req, res);
-        });
-        
-        // Rutas protegidas de emprendimientos
         this.app.use('/api/entrepreneurships', authMiddleware(authService), entrepreneurshipRoutes(entrepreneurshipController));
         
         // Rutas de productos - GET / no requiere autenticación
