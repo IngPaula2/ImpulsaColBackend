@@ -10,9 +10,7 @@ export const entrepreneurshipRoutes = (controller: EntrepreneurshipController) =
     const jsonParser = json();
 
     router.post('/', jsonParser, controller.create);
-    router.get('/', controller.findAll);
     router.get('/mine', controller.findMine);
-    router.get('/:id', controller.findById);
     router.put('/:id', jsonParser, controller.update);
     router.delete('/:id', controller.delete);
     router.post(
