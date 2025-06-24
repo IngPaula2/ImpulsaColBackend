@@ -163,6 +163,17 @@ export class UserApplicationService {
                 title: e.title,
                 location: e.category, // o el campo correcto
                 cover_image: e.cover_image
+            })),
+            investmentIdeas: (user.investmentIdeas || []).map((idea: any) => ({
+                id: idea.id,
+                title: idea.title,
+                description: idea.description,
+                category: idea.category,
+                target_amount: idea.target_amount,
+                investors_needed: idea.investors_needed,
+                images: idea.images,
+                is_active: idea.is_active,
+                created_at: idea.created_at
             }))
         };
     }

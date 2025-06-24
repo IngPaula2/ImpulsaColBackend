@@ -5,6 +5,7 @@ export interface User {
     full_name: string;
     profile_image?: string;
     entrepreneurships?: any[];
+    investmentIdeas?: any[];
     metadata?: UserMetadata;
     created_at?: Date;
     notifications_enabled?: boolean;

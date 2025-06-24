@@ -207,6 +207,8 @@ export class InvestmentIdeaService {
     return {
       id: entity.id,
       user_id: entity.user_id,
+      user_name: entity.user ? entity.user.full_name : undefined,
+      user_profile_image: entity.user ? entity.user.profile_image : undefined,
       title: entity.title,
       description: entity.description,
       category: entity.category,

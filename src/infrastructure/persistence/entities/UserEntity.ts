@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
 import { EntrepreneurshipEntity } from './EntrepreneurshipEntity';
+import { InvestmentIdeaEntity } from './InvestmentIdeaEntity';
 
 @Entity('users')
 export class UserEntity {
@@ -53,4 +54,7 @@ export class UserEntity {
 
     @OneToMany(() => EntrepreneurshipEntity, entrepreneurship => entrepreneurship.user)
     entrepreneurships!: EntrepreneurshipEntity[];
+
+    @OneToMany(() => InvestmentIdeaEntity, idea => idea.user)
+    investmentIdeas!: InvestmentIdeaEntity[];
 } 

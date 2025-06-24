@@ -49,7 +49,7 @@ export class TypeORMUserRepository implements IUserRepository {
     async findUserWithEntrepreneurships(id: number): Promise<UserEntity | null> {
         return this.repository.findOne({
             where: { id },
-            relations: ['entrepreneurships']
+            relations: ['entrepreneurships', 'investmentIdeas']
         });
     }
 

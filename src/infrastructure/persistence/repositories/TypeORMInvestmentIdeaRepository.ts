@@ -35,7 +35,7 @@ export class TypeORMInvestmentIdeaRepository {
 
   async findAll(): Promise<InvestmentIdeaEntity[]> {
     return this.repository.find({
-      relations: ['entrepreneurship']
+      relations: ['entrepreneurship', 'user']
     });
   }
 
@@ -43,7 +43,7 @@ export class TypeORMInvestmentIdeaRepository {
     console.log('[TypeORMInvestmentIdeaRepository] Buscando idea por ID:', id);
     const idea = await this.repository.findOne({
       where: { id },
-      relations: ['entrepreneurship']
+      relations: ['entrepreneurship', 'user']
     });
     console.log('[TypeORMInvestmentIdeaRepository] Resultado de la búsqueda:', idea);
     return idea;

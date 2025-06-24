@@ -28,6 +28,8 @@ export interface UpdateInvestmentIdeaDTO {
 export interface InvestmentIdeaResponseDTO {
   id: number;
   user_id: number;
+  user_name?: string;
+  user_profile_image?: string;
   title: string;
   description: string;
   category?: string;
