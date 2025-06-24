@@ -16,7 +16,7 @@ const authService = new JWTAuthService();
 
 // Rutas CRUD básicas (usando JSON)
 router.post('/', [authMiddleware(authService), json()], controller.create);
-router.get('/', authMiddleware(authService), controller.findAll);
+router.get('/', controller.findAll);
 router.get('/mine', authMiddleware(authService), controller.findMine);
 router.get('/:id', authMiddleware(authService), controller.findById);
 router.put('/:id', [authMiddleware(authService), json()], controller.update);

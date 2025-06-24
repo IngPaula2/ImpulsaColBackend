@@ -50,10 +50,10 @@ export class InvestmentIdeaController {
   findAll = async (_req: Request, res: Response) => {
     try {
       const result = await this.service.findAll();
-      res.status(200).json(result);
+      res.status(200).json({ success: true, data: result });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      res.status(400).json({ error: message });
+      res.status(500).json({ success: false, message });
     }
   };
 

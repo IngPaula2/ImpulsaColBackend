@@ -25,6 +25,9 @@ import { IProductRepository } from '../../domain/ports/IProductRepository';
 import { IEntrepreneurshipRepository } from '../../domain/ports/IEntrepreneurshipRepository';
 import { productRoutes } from '../web/routes/productRoutes';
 import { entrepreneurshipRoutes } from '../web/routes/entrepreneurshipRoutes';
+import { InvestmentIdeaController } from '../web/controllers/InvestmentIdeaController';
+import { InvestmentIdeaService } from '../../application/services/InvestmentIdeaService';
+import { TypeORMInvestmentIdeaRepository } from '../persistence/repositories/TypeORMInvestmentIdeaRepository';
 
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
@@ -109,11 +112,34 @@ export class ServerBootstrap {
             productController.findAll(req, res);
         });
         this.app.use('/api/products', authMiddleware(authService), productRoutes(productController));
+
+        // Rutas de ideas de inversión - GET / no requiere autenticación
+        const investmentIdeaController = new InvestmentIdeaController(new InvestmentIdeaService(new TypeORMInvestmentIdeaRepository(AppDataSource)));
+        this.app.get('/api/investment-ideas', (req, res) => {
+            investmentIdeaController.findAll(req, res);
+        });
         this.app.use('/api/investment-ideas', authMiddleware(authService), investmentIdeaRoutes);
 
         // Ejemplo de ruta protegida
         this.app.get('/api/protected', authMiddleware(authService), (req, res) => {
             res.json({ message: 'Esta es una ruta protegida' });
+        });
+
+        // Manejador de errores global
+        this.app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+            console.error('Error global:', err);
+            res.status(err.status || 500).json({
+                success: false,
+                message: err.message || 'Error interno del servidor'
+            });
+        });
+
+        // Manejador de rutas no encontradas
+        this.app.use((req: express.Request, res: express.Response) => {
+            res.status(404).json({
+                success: false,
+                message: 'Ruta no encontrada'
+            });
         });
     }
 
