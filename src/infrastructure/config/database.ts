@@ -3,6 +3,7 @@ import { UserEntity } from '../persistence/entities/UserEntity';
 import { EntrepreneurshipEntity } from '../persistence/entities/EntrepreneurshipEntity';
 import { ProductEntity } from '../persistence/entities/ProductEntity';
 import { InvestmentIdeaEntity } from '../persistence/entities/InvestmentIdeaEntity';
+import { CategoryEntity } from '../persistence/entities/CategoryEntity';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -18,7 +19,8 @@ export const AppDataSource = new DataSource({
         UserEntity,
         EntrepreneurshipEntity,
         ProductEntity,
-        InvestmentIdeaEntity
+        InvestmentIdeaEntity,
+        CategoryEntity
     ],
     synchronize: false, // Cambiado a false para prevenir pérdida de datos
     logging: true,

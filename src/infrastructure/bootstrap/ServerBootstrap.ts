@@ -28,6 +28,7 @@ import { entrepreneurshipRoutes } from '../web/routes/entrepreneurshipRoutes';
 import { InvestmentIdeaController } from '../web/controllers/InvestmentIdeaController';
 import { InvestmentIdeaService } from '../../application/services/InvestmentIdeaService';
 import { TypeORMInvestmentIdeaRepository } from '../persistence/repositories/TypeORMInvestmentIdeaRepository';
+import categoryRoutes from '../web/routes/categoryRoutes';
 
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
@@ -119,6 +120,9 @@ export class ServerBootstrap {
             investmentIdeaController.findAll(req, res);
         });
         this.app.use('/api/investment-ideas', authMiddleware(authService), investmentIdeaRoutes);
+
+        // Rutas de categorías (sin autenticación)
+        this.app.use('/api/categories', categoryRoutes);
 
         // Ejemplo de ruta protegida
         this.app.get('/api/protected', authMiddleware(authService), (req, res) => {
