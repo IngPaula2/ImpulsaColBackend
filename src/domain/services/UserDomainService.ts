@@ -93,6 +93,11 @@ export class UserDomainService {
         return this.userRepository.findById(id);
     }
 
+    // Nuevo: obtener usuario por email
+    async findByEmail(email: string): Promise<User | null> {
+        return this.userRepository.findByEmail(email);
+    }
+
     // Nuevo: actualizar usuario por id
     async updateUser(userId: number, updateData: UserUpdateData): Promise<User> {
         if (updateData.phone) {

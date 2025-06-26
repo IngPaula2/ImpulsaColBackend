@@ -29,6 +29,7 @@ import { InvestmentIdeaController } from '../web/controllers/InvestmentIdeaContr
 import { InvestmentIdeaService } from '../../application/services/InvestmentIdeaService';
 import { TypeORMInvestmentIdeaRepository } from '../persistence/repositories/TypeORMInvestmentIdeaRepository';
 import categoryRoutes from '../web/routes/categoryRoutes';
+import departmentRoutes from '../web/routes/departmentRoutes';
 
 // Chat imports
 import { TypeORMChatRepository } from '../persistence/repositories/TypeORMChatRepository';
@@ -52,6 +53,10 @@ import { NotificationApplicationService } from '../../application/services/Notif
 import { NotificationController } from '../web/controllers/NotificationController';
 import { createNotificationRoutes } from '../web/routes/notificationRoutes';
 import { INotificationRepository } from '../../domain/ports/INotificationRepository';
+
+// Password reset imports
+import { TypeORMPasswordResetTokenRepository } from '../persistence/repositories/TypeORMPasswordResetTokenRepository';
+import { EmailService } from '../adapters/EmailService';
 
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
@@ -107,10 +112,16 @@ export class ServerBootstrap {
         const notificationApplicationService = new NotificationApplicationService(notificationDomainService);
         const notificationController = new NotificationController(notificationApplicationService);
 
-        // Inicializar servicio de aplicación (con notificaciones)
+        // Inicializar servicios para recuperación de contraseña
+        const passwordResetTokenRepo = new TypeORMPasswordResetTokenRepository(AppDataSource);
+        const emailService = new EmailService();
+
+        // Inicializar servicio de aplicación (con notificaciones y recuperación de contraseña)
         const userApplicationService = new UserApplicationService(
             userDomainService,
             authService,
+            passwordResetTokenRepo,
+            emailService,
             notificationApplicationService
         );
 
@@ -164,6 +175,9 @@ export class ServerBootstrap {
 
         // Rutas de categorías (sin autenticación)
         this.app.use('/api/categories', categoryRoutes);
+
+        // Rutas de departamentos (sin autenticación)
+        this.app.use('/api/departments', departmentRoutes);
 
         // Rutas de chat (requieren autenticación)
         this.app.use('/api/chats', authMiddleware(authService), createChatRoutes(chatController));

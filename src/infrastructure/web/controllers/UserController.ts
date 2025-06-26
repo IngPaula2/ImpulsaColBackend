@@ -226,4 +226,74 @@ export class UserController {
         res.status(500).json({ success: false, message: 'Error al subir la imagen de perfil', error: error instanceof Error ? error.message : error });
       }
     };
+
+    // Solicitar recuperación de contraseña
+    requestPasswordReset = async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { email } = req.body;
+        if (!email) {
+          res.status(400).json({ success: false, message: 'El email es requerido' });
+          return;
+        }
+
+        await this.userService.requestPasswordReset(email);
+        res.status(200).json({ 
+          success: true, 
+          message: 'Se ha enviado un código de recuperación a tu correo electrónico' 
+        });
+      } catch (error) {
+        res.status(400).json({ 
+          success: false, 
+          message: error instanceof Error ? error.message : 'Error al solicitar recuperación de contraseña' 
+        });
+      }
+    };
+
+    // Verificar código de recuperación
+    verifyPasswordResetCode = async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { email, code } = req.body;
+        if (!email || !code) {
+          res.status(400).json({ success: false, message: 'Email y código son requeridos' });
+          return;
+        }
+
+        const isValid = await this.userService.verifyPasswordResetCode(email, code);
+        if (isValid) {
+          res.status(200).json({ success: true, message: 'Código válido' });
+        } else {
+          res.status(400).json({ success: false, message: 'Código inválido o expirado' });
+        }
+      } catch (error) {
+        res.status(400).json({ 
+          success: false, 
+          message: error instanceof Error ? error.message : 'Error al verificar código' 
+        });
+      }
+    };
+
+    // Restablecer contraseña
+    resetPassword = async (req: Request, res: Response): Promise<void> => {
+      try {
+        const { email, code, newPassword } = req.body;
+        if (!email || !code || !newPassword) {
+          res.status(400).json({ success: false, message: 'Email, código y nueva contraseña son requeridos' });
+          return;
+        }
+
+        // Validar nueva contraseña
+        if (newPassword.length < 8) {
+          res.status(400).json({ success: false, message: 'La nueva contraseña debe tener al menos 8 caracteres' });
+          return;
+        }
+
+        await this.userService.resetPassword(email, code, newPassword);
+        res.status(200).json({ success: true, message: 'Contraseña restablecida correctamente' });
+      } catch (error) {
+        res.status(400).json({ 
+          success: false, 
+          message: error instanceof Error ? error.message : 'Error al restablecer contraseña' 
+        });
+      }
+    };
 } 

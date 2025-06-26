@@ -16,6 +16,11 @@ export const createUserRoutes = (userController: UserController): Router => {
     router.post('/:id/roles', jsonParser, userController.assignRole);
     router.get('/public-profile/:userId', userController.getPublicProfile);
 
+    // Rutas públicas para recuperación de contraseña
+    router.post('/forgot-password', jsonParser, userController.requestPasswordReset);
+    router.post('/verify-reset-code', jsonParser, userController.verifyPasswordResetCode);
+    router.post('/reset-password', jsonParser, userController.resetPassword);
+
     // Ruta protegida para obtener el perfil del usuario autenticado
     router.get('/me', authMiddleware(authService), userController.getProfile);
     // Ruta protegida para actualizar el perfil del usuario autenticado

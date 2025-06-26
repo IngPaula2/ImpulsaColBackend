@@ -11,6 +11,9 @@ export class CategoryEntity {
   @Column({ length: 50 })
   type!: string;
 
+  @Column({ nullable: true, length: 255 })
+  image_url?: string;
+
   @CreateDateColumn()
   created_at!: Date;
 } 

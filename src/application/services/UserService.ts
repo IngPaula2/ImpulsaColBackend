@@ -3,11 +3,17 @@ import { RegisterUserDTO, UserDTO, AuthResponseDTO, LoginUserDTO, UserMetadataDT
 import { IAuthenticationService } from '../../domain/ports/IUserRepository';
 import { UserRegistrationData, UserMetadata } from '../../domain/models/User';
 import { NotificationApplicationService } from './NotificationApplicationService';
+import { EmailService } from '../../infrastructure/adapters/EmailService';
+import { PasswordResetTokenEntity } from '../../infrastructure/persistence/entities/PasswordResetTokenEntity';
+import { IPasswordResetTokenRepository } from '../../domain/ports/IPasswordResetTokenRepository';
+import { User } from '../../domain/models/User';
 
 export class UserApplicationService {
     constructor(
         private readonly userDomainService: UserDomainService,
         private readonly authService: IAuthenticationService,
+        private readonly passwordResetTokenRepo: IPasswordResetTokenRepository,
+        private readonly emailService: EmailService,
         private readonly notificationService?: NotificationApplicationService
     ) {}
 
@@ -189,5 +195,46 @@ export class UserApplicationService {
                 created_at: idea.created_at
             }))
         };
+    }
+
+    async requestPasswordReset(email: string): Promise<void> {
+        // Buscar usuario
+        const user = await this.userDomainService.findByEmail(email);
+        if (!user) throw new Error('No existe un usuario con ese correo');
+        // Generar código de 6 dígitos
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+        // Guardar token
+        const tokenEntity = new PasswordResetTokenEntity();
+        tokenEntity.user_id = user.id!;
+        tokenEntity.token = code;
+        tokenEntity.expires_at = expiresAt;
+        tokenEntity.used = false;
+        await this.passwordResetTokenRepo.create(tokenEntity);
+        // Enviar email
+        await this.emailService.sendPasswordResetEmail(email, code);
+    }
+
+    async verifyPasswordResetCode(email: string, code: string): Promise<boolean> {
+        const user = await this.userDomainService.findByEmail(email);
+        if (!user) throw new Error('No existe un usuario con ese correo');
+        const token = await this.passwordResetTokenRepo.findValidByUserId(user.id!);
+        if (!token || token.token !== code || token.used || token.expires_at < new Date()) {
+            return false;
+        }
+        return true;
+    }
+
+    async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+        const user = await this.userDomainService.findByEmail(email);
+        if (!user) throw new Error('No existe un usuario con ese correo');
+        const token = await this.passwordResetTokenRepo.findValidByUserId(user.id!);
+        if (!token || token.token !== code || token.used || token.expires_at < new Date()) {
+            throw new Error('Código inválido o expirado');
+        }
+        // Cambiar contraseña
+        const password_hash = await this.authService.hashPassword(newPassword);
+        await this.userDomainService.updateUser(user.id!, { password_hash });
+        await this.passwordResetTokenRepo.markAsUsed(token.token);
     }
 } 
