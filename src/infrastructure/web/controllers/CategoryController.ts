@@ -22,6 +22,7 @@ export class CategoryController {
         name: cat.name,
         type: cat.type,
         created_at: cat.created_at,
+        image_url: cat.image_url,
       }));
       return res.json(response);
     } catch (error) {

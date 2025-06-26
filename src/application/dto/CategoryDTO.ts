@@ -3,4 +3,5 @@ export interface CategoryResponseDTO {
   name: string;
   type: string;
   created_at: Date;
+  image_url?: string;
 } 
