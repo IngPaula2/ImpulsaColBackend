@@ -51,21 +51,50 @@ export class TypeORMChatRepository implements IChatRepository {
     }
 
     async findUserChats(userId: number): Promise<ChatSummary[]> {
-        const chatEntities = await this.chatRepository
+        console.log(`TypeORMChatRepository - Obteniendo chats para usuario: ${userId}`);
+        
+        // Obtener chats del usuario con información de participantes
+        const chats = await this.chatRepository
             .createQueryBuilder('chat')
             .leftJoinAndSelect('chat.user1', 'user1')
             .leftJoinAndSelect('chat.user2', 'user2')
-            .leftJoin('chat.messages', 'lastMessage')
-            .leftJoinAndSelect('lastMessage.sender', 'lastMessageSender')
             .where('chat.user1_id = :userId OR chat.user2_id = :userId', { userId })
-            .addSelect('lastMessage.id')
-            .addSelect('lastMessage.content')
-            .addSelect('lastMessage.sent_at')
             .orderBy('chat.created_at', 'DESC')
-            .addOrderBy('lastMessage.sent_at', 'DESC')
             .getMany();
 
-        return chatEntities.map(chat => this.mapChatToSummary(chat, userId));
+        console.log(`TypeORMChatRepository - Encontrados ${chats.length} chats`);
+
+        // Para cada chat, obtener el último mensaje
+        const chatSummaries: ChatSummary[] = [];
+        
+        for (const chat of chats) {
+            // Obtener el último mensaje de este chat específico
+            const lastMessage = await this.messageRepository
+                .createQueryBuilder('message')
+                .leftJoinAndSelect('message.sender', 'sender')
+                .where('message.chat_id = :chatId', { chatId: chat.id })
+                .orderBy('message.sent_at', 'DESC')
+                .limit(1)
+                .getOne();
+
+            // Crear el resumen del chat
+            const summary = this.mapChatToSummary({
+                ...chat,
+                messages: lastMessage ? [lastMessage] : []
+            }, userId);
+            
+            chatSummaries.push(summary);
+        }
+
+        // Ordenar por última actividad (último mensaje o fecha de creación del chat)
+        chatSummaries.sort((a, b) => {
+            const dateA = a.lastMessage?.sent_at ? new Date(a.lastMessage.sent_at) : a.created_at;
+            const dateB = b.lastMessage?.sent_at ? new Date(b.lastMessage.sent_at) : b.created_at;
+            return dateB.getTime() - dateA.getTime();
+        });
+
+        console.log(`TypeORMChatRepository - Procesados ${chatSummaries.length} resúmenes de chat`);
+        return chatSummaries;
     }
 
     async createMessage(messageData: CreateMessageData): Promise<Message> {

@@ -31,7 +31,8 @@ export const AppDataSource = new DataSource({
         NotificationEntity
     ],
     synchronize: false, // Cambiado a false para prevenir pérdida de datos
-    logging: true,
+    logging: false, // Cambiado a false para reducir logs durante desarrollo
     migrations: ['src/infrastructure/migrations/*.ts'],
-    migrationsRun: true // Ejecutará las migraciones al iniciar
+    migrationsRun: true, // Ejecutará las migraciones al iniciar
+    migrationsTableName: 'migrations' // Nombre específico de la tabla de migraciones
 }); 

@@ -68,23 +68,28 @@ export class FavoriteApplicationService {
         }
     }
 
-    async getUserFavorites(userId: number): Promise<FavoritesListResponse> {
+    async getUserFavorites(userId: number): Promise<{ success: boolean; data: { entrepreneurships: Favorite[]; products: Favorite[]; investment_ideas: Favorite[] } }> {
         try {
             console.log('FavoriteApplicationService.getUserFavorites - UserId:', userId);
 
-            const allFavorites = await this.favoriteRepository.findByUser(userId);
+            const favorites = await this.favoriteRepository.findByUser(userId);
             
-            const favoritesByType = {
-                entrepreneurships: allFavorites.filter(f => f.item_type === 'entrepreneurship').map(f => this.mapToDTO(f)),
-                products: allFavorites.filter(f => f.item_type === 'product').map(f => this.mapToDTO(f)),
-                investment_ideas: allFavorites.filter(f => f.item_type === 'investment_idea').map(f => this.mapToDTO(f))
+            // Separar por tipo
+            const entrepreneurships = favorites.filter(f => f.item_type === 'entrepreneurship');
+            const products = favorites.filter(f => f.item_type === 'product');
+            const investment_ideas = favorites.filter(f => f.item_type === 'investment_idea');
+
+            const result = {
+                entrepreneurships,
+                products,
+                investment_ideas
             };
 
-            console.log('FavoriteApplicationService.getUserFavorites - Favoritos encontrados:', favoritesByType);
-
+            console.log('FavoriteApplicationService.getUserFavorites - Favoritos encontrados:', result);
+            
             return {
                 success: true,
-                data: favoritesByType
+                data: result
             };
         } catch (error) {
             console.error('FavoriteApplicationService.getUserFavorites - Error:', error);

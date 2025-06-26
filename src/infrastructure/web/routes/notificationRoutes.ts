@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { NotificationController } from '../controllers/NotificationController';
+import express from 'express';
 
 export function createNotificationRoutes(notificationController: NotificationController): Router {
     const router = Router();
+    const jsonParser = express.json();
 
     // GET /notifications - Obtener notificaciones del usuario autenticado
     router.get('/', notificationController.getUserNotifications);
@@ -16,17 +18,20 @@ export function createNotificationRoutes(notificationController: NotificationCon
     // GET /notifications/:id - Obtener una notificación específica
     router.get('/:id', notificationController.getNotificationById);
 
-    // PUT /notifications/mark-read - Marcar notificaciones como leídas
-    router.put('/mark-read', notificationController.markAsRead);
+    // PUT /notifications/mark-read - Marcar notificaciones como leídas (CON JSON PARSER)
+    router.put('/mark-read', jsonParser, notificationController.markAsRead);
 
     // DELETE /notifications/:id - Eliminar una notificación
     router.delete('/:id', notificationController.deleteNotification);
 
-    // POST /notifications/create - Crear una notificación (para testing)
-    router.post('/create', notificationController.createNotification);
+    // POST /notifications/create - Crear una notificación (para testing) (CON JSON PARSER)
+    router.post('/create', jsonParser, notificationController.createNotification);
 
     // POST /notifications/welcome - Crear notificación de bienvenida
     router.post('/welcome', notificationController.createWelcomeNotification);
+
+    // POST /notifications/test-message - Crear notificación de mensaje de prueba (para testing) (CON JSON PARSER)
+    router.post('/test-message', jsonParser, notificationController.createTestMessageNotification);
 
     return router;
 } 

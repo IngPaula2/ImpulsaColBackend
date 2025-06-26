@@ -284,4 +284,57 @@ export class NotificationController {
             });
         }
     };
+
+    // POST /notifications/test-message - Crear notificación de mensaje de prueba
+    createTestMessageNotification = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                res.status(401).json({
+                    success: false,
+                    message: 'Usuario no autenticado'
+                });
+                return;
+            }
+
+            const { receiverId, senderName, chatId, senderImage } = req.body;
+
+            if (!receiverId || !senderName || !chatId) {
+                res.status(400).json({
+                    success: false,
+                    message: 'Faltan campos requeridos: receiverId, senderName, chatId'
+                });
+                return;
+            }
+
+            console.log('NotificationController.createTestMessageNotification - Datos de prueba:', {
+                receiverId,
+                senderId: userId,
+                senderName,
+                chatId,
+                senderImage
+            });
+
+            const result = await this.notificationApplicationService.createMessageNotification(
+                receiverId,
+                userId,
+                senderName,
+                chatId,
+                senderImage
+            );
+            
+            if (result.success) {
+                console.log('NotificationController - Notificación de prueba creada:', result.data);
+                res.status(201).json(result);
+            } else {
+                res.status(400).json(result);
+            }
+        } catch (error) {
+            console.error('Error en createTestMessageNotification:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error interno del servidor'
+            });
+        }
+    };
 } 

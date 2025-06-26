@@ -124,34 +124,70 @@ export class ChatApplicationService {
     }
 
     private async createMessageNotification(senderId: number, chatId: number, message: Message): Promise<void> {
-        if (!this.notificationService) return;
+        if (!this.notificationService) {
+            console.log('ChatApp - NotificationService no disponible');
+            return;
+        }
 
         try {
+            console.log('ChatApp - Creando notificación de mensaje para chat:', chatId);
+            
             // Obtener información del chat para determinar el receptor
             const chat = await this.chatDomainService.getChatById(chatId, senderId);
             
-            if (!chat) return;
+            if (!chat) {
+                console.error('ChatApp - No se encontró el chat:', chatId);
+                return;
+            }
 
             // Determinar quién es el receptor (el usuario que no es el sender)
             const receiverId = chat.user1_id === senderId ? chat.user2_id : chat.user1_id;
             
+            console.log('ChatApp - Datos del chat:', {
+                chatId,
+                senderId,
+                receiverId,
+                user1_id: chat.user1_id,
+                user2_id: chat.user2_id
+            });
+            
             // Validar que el receptor existe
-            if (!receiverId || receiverId === senderId) return;
+            if (!receiverId || receiverId === senderId) {
+                console.error('ChatApp - Receptor inválido:', { receiverId, senderId });
+                return;
+            }
             
             // Obtener información del remitente desde el mensaje
             const senderName = message.sender?.full_name || 'Un usuario';
             const senderImage = message.sender?.profile_image;
 
+            console.log('ChatApp - Datos del remitente:', {
+                senderId,
+                senderName,
+                senderImage: senderImage ? 'Imagen disponible' : 'Sin imagen'
+            });
+
             // Crear la notificación
-            await this.notificationService.createMessageNotification(
+            const result = await this.notificationService.createMessageNotification(
                 receiverId,
                 senderId,
                 senderName,
                 chatId,
                 senderImage
             );
+
+            if (result.success) {
+                // Verificar que data existe y es un objeto individual (no array)
+                if (result.data && !Array.isArray(result.data)) {
+                    console.log('ChatApp - Notificación de mensaje creada exitosamente:', result.data.id);
+                } else {
+                    console.log('ChatApp - Notificación de mensaje creada exitosamente');
+                }
+            } else {
+                console.error('ChatApp - Error al crear notificación:', result.message);
+            }
         } catch (error) {
-            console.error('Error al crear notificación de mensaje:', error);
+            console.error('ChatApp - Error al crear notificación de mensaje:', error);
             // No lanzar error para no afectar el flujo principal
         }
     }

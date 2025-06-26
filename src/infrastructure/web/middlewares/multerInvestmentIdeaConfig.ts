@@ -9,8 +9,7 @@ const storage = new CloudinaryStorage({
     allowed_formats: ['jpg', 'png', 'jpeg', 'gif', 'webp', 'avif'],
     transformation: [
       { width: 800, height: 600, crop: 'limit' },
-      { quality: 'auto' },
-      { fetch_format: 'auto' }  // Esto convertirá automáticamente al mejor formato
+      { quality: 'auto' }
     ],
   } as any,
 });
