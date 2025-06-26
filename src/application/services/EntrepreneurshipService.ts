@@ -1,164 +1,110 @@
-import { CreateEntrepreneurshipDTO, EntrepreneurshipResponseDTO } from '../dto/EntrepreneurshipDTO';
-import { TypeORMEntrepreneurshipRepository } from '../../infrastructure/persistence/repositories/TypeORMEntrepreneurshipRepository';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { IEntrepreneurshipRepository, IProductRepository } from '../../domain/ports';
 import { EntrepreneurshipEntity } from '../../infrastructure/persistence/entities/EntrepreneurshipEntity';
-import fs from 'fs';
-import path from 'path';
-import { ProductService } from './ProductService';
-import { TypeORMProductRepository as ProductRepository } from '../../infrastructure/persistence/repositories/TypeORMProductRepository';
-import { AppDataSource } from '../../infrastructure/config/database';
-
-// Función auxiliar para eliminar un archivo de forma segura
-function deletePhysicalFile(imageUrl: string, subfolder: 'entrepreneurships' | 'products') {
-  try {
-    const fileName = imageUrl.split('/').pop();
-    if (!fileName) {
-      console.warn(`No se pudo extraer el nombre del archivo de: ${imageUrl}`);
-      return;
-    }
-
-    const filePath = path.join(__dirname, `../../../../uploads/${subfolder}/${fileName}`);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      console.log(`Archivo físico eliminado: ${filePath}`);
-    } else {
-      console.warn(`Se intentó eliminar un archivo que no existe: ${filePath}`);
-    }
-  } catch (error) {
-    console.error(`Error al eliminar archivo físico:`, error);
-  }
-}
+import { CreateEntrepreneurshipDTO, EntrepreneurshipResponseDTO } from '../dto/EntrepreneurshipDTO';
 
 export class EntrepreneurshipService {
-  private productService: ProductService;
+    constructor(
+        private readonly entrepreneurshipRepository: IEntrepreneurshipRepository,
+        private readonly productRepository: IProductRepository
+    ) {}
 
-  constructor(private repository: TypeORMEntrepreneurshipRepository) {
-    const productRepository = new ProductRepository(AppDataSource);
-    this.productService = new ProductService(productRepository);
-  }
-
-  async create(dto: CreateEntrepreneurshipDTO): Promise<EntrepreneurshipResponseDTO> {
-    const entity = await this.repository.create(dto);
-    return {
-      id: entity.id,
-      user_id: entity.user_id,
-      user_name: entity.user?.full_name || '',
-      title: entity.title,
-      description: entity.description,
-      category: entity.category,
-      cover_image: entity.cover_image,
-      created_at: entity.created_at,
-    };
-  }
-
-  async findAll(): Promise<EntrepreneurshipResponseDTO[]> {
-    const entities = await this.repository.findAll();
-    return entities.map(entity => ({
-      id: entity.id,
-      user_id: entity.user_id,
-      user_name: entity.user?.full_name || '',
-      title: entity.title,
-      description: entity.description,
-      category: entity.category,
-      cover_image: entity.cover_image,
-      created_at: entity.created_at,
-    }));
-  }
-
-  async findByUserId(userId: number): Promise<EntrepreneurshipResponseDTO[]> {
-    const entities = await this.repository.findByUserId(userId);
-    return entities.map(entity => ({
-      id: entity.id,
-      user_id: entity.user_id,
-      user_name: entity.user?.full_name || '',
-      title: entity.title,
-      description: entity.description,
-      category: entity.category,
-      cover_image: entity.cover_image,
-      created_at: entity.created_at,
-    }));
-  }
-
-  async findOne(id: number): Promise<EntrepreneurshipResponseDTO | null> {
-    const entity = await this.repository.findOne(id);
-    if (!entity) return null;
-    return {
-      id: entity.id,
-      user_id: entity.user_id,
-      user_name: entity.user?.full_name || '',
-      title: entity.title,
-      description: entity.description,
-      category: entity.category,
-      cover_image: entity.cover_image,
-      created_at: entity.created_at,
-    };
-  }
-
-  async update(id: number, data: Partial<CreateEntrepreneurshipDTO>): Promise<EntrepreneurshipResponseDTO | null> {
-    const entity = await this.repository.update(id, data);
-    if (!entity) return null;
-    return {
-      id: entity.id,
-      user_id: entity.user_id,
-      user_name: entity.user?.full_name || '',
-      title: entity.title,
-      description: entity.description,
-      category: entity.category,
-      cover_image: entity.cover_image,
-      created_at: entity.created_at,
-    };
-  }
-
-  async updateCoverImage(id: number, imageUrl: string): Promise<EntrepreneurshipResponseDTO | null> {
-    const entrepreneurship = await this.repository.findOne(id);
-    if (!entrepreneurship) {
-      deletePhysicalFile(imageUrl, 'entrepreneurships'); // Limpiar archivo huérfano
-      throw new Error('Emprendimiento no encontrado al intentar actualizar imagen.');
+    private mapToDTO(entity: EntrepreneurshipEntity): EntrepreneurshipResponseDTO {
+        return {
+            id: entity.id,
+            user_id: entity.user_id,
+            user_name: entity.user?.full_name || '',
+            user_profile_image: entity.user?.profile_image || null,
+            title: entity.title,
+            description: entity.description,
+            category: entity.category,
+            cover_image: entity.cover_image,
+            created_at: entity.created_at,
+            location: entity.user?.department || 'N/A',
+        };
     }
 
-    // Eliminar la imagen anterior si existe
-    if (entrepreneurship.cover_image) {
-      deletePhysicalFile(entrepreneurship.cover_image, 'entrepreneurships');
+    async create(createDto: CreateEntrepreneurshipDTO): Promise<EntrepreneurshipResponseDTO> {
+        const newEntity = await this.entrepreneurshipRepository.create({
+            ...createDto,
+            cover_image: createDto.cover_image || 'default_cover.jpg'
+        });
+        return this.mapToDTO(newEntity);
     }
 
-    // Actualizar con la nueva imagen
-    const entity = await this.repository.updateCoverImage(id, imageUrl);
-    if (!entity) {
-      return null;
-    }
-    
-    return {
-      id: entity.id,
-      user_id: entity.user_id,
-      user_name: entity.user?.full_name || '',
-      title: entity.title,
-      description: entity.description,
-      category: entity.category,
-      cover_image: entity.cover_image,
-      created_at: entity.created_at,
-    };
-  }
-
-  async delete(id: number): Promise<boolean> {
-    const entrepreneurship = await this.repository.findOneWithProducts(id);
-
-    if (!entrepreneurship) {
-      throw new Error('Emprendimiento no encontrado');
+    async findAll(): Promise<EntrepreneurshipResponseDTO[]> {
+        const entities = await this.entrepreneurshipRepository.findAll();
+        return entities.map(e => this.mapToDTO(e));
     }
 
-    // 1. Eliminar todos los productos asociados
-    if (entrepreneurship.products && entrepreneurship.products.length > 0) {
-      for (const product of entrepreneurship.products) {
-        await this.productService.delete(product.id);
-      }
+    async findMine(userId: number): Promise<EntrepreneurshipResponseDTO[]> {
+        const entities = await this.entrepreneurshipRepository.findByUserId(userId);
+        return entities.map(e => this.mapToDTO(e));
     }
 
-    // 2. Eliminar la imagen de portada del emprendimiento
-    if (entrepreneurship.cover_image) {
-      deletePhysicalFile(entrepreneurship.cover_image, 'entrepreneurships');
+    async findById(id: number): Promise<EntrepreneurshipResponseDTO | null> {
+        const entity = await this.entrepreneurshipRepository.findById(id);
+        return entity ? this.mapToDTO(entity) : null;
     }
 
-    // 3. Eliminar el emprendimiento de la base de datos
-    await this.repository.delete(id);
-    return true;
-  }
-} 
+    async update(id: number, updateDto: Partial<CreateEntrepreneurshipDTO>): Promise<EntrepreneurshipResponseDTO | null> {
+        const updatedEntity = await this.entrepreneurshipRepository.update(id, updateDto);
+        return updatedEntity ? this.mapToDTO(updatedEntity) : null;
+    }
+
+    async updateCoverImage(id: number, imageUrl: string): Promise<EntrepreneurshipResponseDTO | null> {
+        const entrepreneurship = await this.entrepreneurshipRepository.findById(id);
+        if (!entrepreneurship) {
+            try {
+                const fullPath = path.resolve(process.cwd(), imageUrl);
+                await fs.unlink(fullPath);
+            } catch (error) {
+                console.error(`Error al eliminar imagen huérfana: ${imageUrl}`, error);
+            }
+            throw new Error('Emprendimiento no encontrado');
+        }
+
+        if (entrepreneurship.cover_image) {
+            try {
+                const fullPath = path.resolve(process.cwd(), entrepreneurship.cover_image);
+                await fs.unlink(fullPath);
+            } catch (error) {
+                console.error(`Error al eliminar imagen de portada anterior: ${entrepreneurship.cover_image}`, error);
+            }
+        }
+        
+        const updatedEntity = await this.entrepreneurshipRepository.update(id, { cover_image: imageUrl });
+        return updatedEntity ? this.mapToDTO(updatedEntity) : null;
+    }
+
+    async delete(id: number): Promise<void> {
+        const products = await this.productRepository.findByEntrepreneurshipId(id);
+
+        for (const product of products) {
+            if (product.images) {
+                for (const imagePath of product.images) {
+                    try {
+                        const fullPath = path.resolve(process.cwd(), imagePath);
+                        await fs.unlink(fullPath);
+                    } catch (error) {
+                        console.error(`Error al eliminar la imagen del producto ${product.id}: ${imagePath}`, error);
+                    }
+                }
+            }
+            await this.productRepository.delete(product.id);
+        }
+
+        const entrepreneurship = await this.entrepreneurshipRepository.findById(id);
+        if (entrepreneurship?.cover_image) {
+            try {
+                const fullPath = path.resolve(process.cwd(), entrepreneurship.cover_image);
+                await fs.unlink(fullPath);
+            } catch (error) {
+                console.error(`Error al eliminar la imagen de portada del emprendimiento ${id}: ${entrepreneurship.cover_image}`, error);
+            }
+        }
+
+        await this.entrepreneurshipRepository.delete(id);
+    }
+}

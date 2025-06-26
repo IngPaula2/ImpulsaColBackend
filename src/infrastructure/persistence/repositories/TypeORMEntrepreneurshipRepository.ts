@@ -1,7 +1,8 @@
 import { Repository, DataSource } from 'typeorm';
 import { EntrepreneurshipEntity } from '../entities/EntrepreneurshipEntity';
+import { IEntrepreneurshipRepository } from '../../../domain/ports/IEntrepreneurshipRepository';
 
-export class TypeORMEntrepreneurshipRepository {
+export class TypeORMEntrepreneurshipRepository implements IEntrepreneurshipRepository {
   private repository: Repository<EntrepreneurshipEntity>;
 
   constructor(dataSource: DataSource) {
@@ -21,6 +22,10 @@ export class TypeORMEntrepreneurshipRepository {
     return this.repository.find({ where: { user_id: userId }, relations: ['user'] });
   }
 
+  async findById(id: number): Promise<EntrepreneurshipEntity | null> {
+    return this.repository.findOne({ where: { id }, relations: ['user'] });
+  }
+
   async findOne(id: number): Promise<EntrepreneurshipEntity | null> {
     return this.repository.findOne({ where: { id }, relations: ['user'] });
   }
@@ -30,12 +35,8 @@ export class TypeORMEntrepreneurshipRepository {
   }
 
   async update(id: number, data: Partial<EntrepreneurshipEntity>): Promise<EntrepreneurshipEntity | null> {
-    const entity = await this.findOne(id);
-    if (entity) {
-      Object.assign(entity, data);
-      return this.repository.save(entity);
-    }
-    return null;
+    await this.repository.update(id, data);
+    return this.findOne(id);
   }
 
   async updateCoverImage(id: number, coverImage: string): Promise<EntrepreneurshipEntity | null> {

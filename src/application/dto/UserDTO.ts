@@ -2,6 +2,7 @@ export interface UserDTO {
     id?: number;
     email: string;
     full_name: string;
+    profile_image?: string;
     metadata?: UserMetadataDTO;
     notifications_enabled?: boolean;
     last_login?: Date;

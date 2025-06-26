@@ -41,7 +41,6 @@ export class UserController {
                 data: result
             });
         } catch (error) {
-            console.error('Error en registro:', error instanceof Error ? error.message : 'Error desconocido');
             res.status(400).json({
                 success: false,
                 message: error instanceof Error ? error.message : 'Error en el registro'
@@ -64,8 +63,6 @@ export class UserController {
                 data: result
             });
         } catch (error) {
-            console.error('Error en login:', error instanceof Error ? error.message : 'Error desconocido');
-            
             res.status(401).json({
                 success: false,
                 message: error instanceof Error ? error.message : 'Error en la autenticación'
@@ -88,80 +85,47 @@ export class UserController {
     // Nuevo: obtener perfil del usuario autenticado
     getProfile = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       try {
-        console.log('UserController.getProfile - Iniciando obtención de perfil');
-        console.log('UserController.getProfile - Request user:', req.user);
-        
-        // El userId debe estar en req.user.userId (middleware de autenticación)
         const userId = req.user?.userId;
         if (!userId) {
-          console.log('UserController.getProfile - No se encontró userId en request');
-          throw new Error('No autenticado');
+          res.status(400).json({ message: 'No se encontró el ID de usuario en el token' });
+          return;
         }
 
-        console.log('UserController.getProfile - Obteniendo datos del usuario con ID:', userId);
-        // Obtener datos del usuario
         const user = await this.userService.findById(userId);
         if (!user) {
-          console.log('UserController.getProfile - Usuario no encontrado');
-          throw new Error('Usuario no encontrado');
+          res.status(404).json({ message: 'Usuario no encontrado' });
+          return;
         }
 
-        console.log('UserController.getProfile - Obteniendo roles del usuario');
-        // Obtener roles
         const roles = await this.userRoleService.getUserRoles(userId);
-        console.log('UserController.getProfile - Roles obtenidos:', roles);
 
-        res.status(200).json({
-          success: true,
-          data: {
-            ...user,
-            roles
-          }
-        });
-      } catch (error) {
-        console.error('UserController.getProfile - Error:', error);
-        res.status(401).json({ 
-          success: false, 
-          message: error instanceof Error ? error.message : 'No autenticado' 
-        });
+        const userProfile = {
+          ...user,
+          profile_image: user.profile_image || null,
+          roles,
+        };
+
+        res.json({ success: true, data: userProfile });
+      } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
       }
     };
 
     // Nuevo: actualizar perfil del usuario autenticado
     updateProfile = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
       try {
-        console.log('UserController.updateProfile - Iniciando actualización de perfil');
-        console.log('UserController.updateProfile - Request user:', req.user);
-        console.log('UserController.updateProfile - Request body:', req.body);
-        
         const userId = req.user?.userId;
         if (!userId) {
-          console.log('UserController.updateProfile - No se encontró userId en request');
-          throw new Error('No autenticado');
+          res.status(400).json({ message: 'No se encontró el ID de usuario en el token' });
+          return;
         }
         
-        console.log('UserController.updateProfile - Actualizando usuario con ID:', userId);
         const updateData = req.body;
 
-        // Validar el teléfono igual que en el registro
-        if (updateData.metadata?.phone) {
-          console.log('UserController.updateProfile - Validando teléfono:', updateData.metadata.phone);
-          const cleanPhone = updateData.metadata.phone.replace(/\s|-/g, '');
-          if (!/^3\d{9}$/.test(cleanPhone)) {
-            throw new Error('El número de teléfono debe comenzar con 3 y tener 10 dígitos');
-          }
-          updateData.metadata.phone = cleanPhone;
-          console.log('UserController.updateProfile - Teléfono validado y limpiado:', cleanPhone);
-        }
-
-        // Llama al servicio de aplicación para actualizar
-        console.log('UserController.updateProfile - Llamando al servicio de aplicación');
         const updatedUser = await this.userService.update(userId, updateData);
-        console.log('UserController.updateProfile - Usuario actualizado exitosamente');
-        res.status(200).json({ success: true, data: updatedUser });
-      } catch (error) {
-        console.error('UserController.updateProfile - Error:', error);
-        res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Error al actualizar' });
+        res.json({ success: true, data: updatedUser });
+      } catch (error: any) {
+        res.status(500).json({ success: false, message: error.message });
       }
     };
 
@@ -172,7 +136,7 @@ export class UserController {
         if (!userId) throw new Error('No autenticado');
         const user = await this.userService.findById(userId);
         if (!user) throw new Error('Usuario no encontrado');
-        res.status(200).json({ success: true, notifications_enabled: user.notifications_enabled ?? false });
+        res.status(200).json({ success: true, data: { notifications_enabled: user.notifications_enabled ?? false } });
       } catch (error) {
         res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Error' });
       }
@@ -186,7 +150,7 @@ export class UserController {
         const { enabled } = req.body;
         if (typeof enabled !== 'boolean') throw new Error('Valor inválido');
         const updated = await this.userService.update(userId, { notifications_enabled: enabled });
-        res.status(200).json({ success: true, notifications_enabled: updated.notifications_enabled });
+        res.status(200).json({ success: true, data: { notifications_enabled: updated.notifications_enabled } });
       } catch (error) {
         res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Error' });
       }
@@ -212,6 +176,54 @@ export class UserController {
         res.status(200).json({ success: true, message: 'Contraseña actualizada correctamente' });
       } catch (error) {
         res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Error' });
+      }
+    };
+
+    // Obtener perfil público de un usuario por ID
+    getPublicProfile = async (req: Request, res: Response) => {
+      try {
+        const userId = Number(req.params.userId);
+        if (isNaN(userId)) {
+          return res.status(400).json({ success: false, message: 'ID inválido' });
+        }
+        const user = await this.userService.findPublicProfileById(userId);
+        if (!user) {
+          return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+        res.json({ success: true, data: user });
+      } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al obtener el perfil público' });
+      }
+    };
+
+    // Subir imagen de perfil
+    uploadProfileImage = async (req: AuthenticatedRequest, res: Response) => {
+      try {
+        const userId = req.user?.userId;
+        console.log('uploadProfileImage - userId:', userId);
+        console.log('uploadProfileImage - req.method:', req.method);
+        console.log('uploadProfileImage - req.headers:', req.headers);
+        console.log('uploadProfileImage - req.file:', req.file);
+        if (req.file) {
+          console.log('uploadProfileImage - req.file typeof:', typeof req.file);
+          if (typeof req.file === 'object') {
+            Object.entries(req.file as Record<string, any>).forEach(([key, value]) => {
+              console.log(`uploadProfileImage - req.file[${key}]:`, value);
+            });
+          }
+        }
+        console.log('uploadProfileImage - req.body:', req.body);
+        if (!userId) return res.status(401).json({ success: false, message: 'No autenticado' });
+        if (!req.file || !('path' in req.file)) {
+          console.error('uploadProfileImage - No se subió ninguna imagen o req.file.path no existe');
+          return res.status(400).json({ success: false, message: 'No se subió ninguna imagen', reqFile: req.file });
+        }
+        const imageUrl = (req.file as any).path;
+        const updatedUser = await this.userService.update(userId, { profile_image: imageUrl });
+        res.json({ success: true, data: { profile_image: updatedUser.profile_image } });
+      } catch (error) {
+        console.error('uploadProfileImage - Error:', error);
+        res.status(500).json({ success: false, message: 'Error al subir la imagen de perfil', error: error instanceof Error ? error.message : error });
       }
     };
 } 

@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { UserEntity } from './UserEntity';
+import { EntrepreneurshipEntity } from './EntrepreneurshipEntity';
 
 @Entity('investment_ideas')
 export class InvestmentIdeaEntity {
@@ -30,6 +31,22 @@ export class InvestmentIdeaEntity {
 
   @Column({ type: 'text', nullable: true })
   investor_message!: string;
+
+  @Column({ type: 'text', array: true, nullable: true })
+  images!: string[];
+
+  @Column({ type: 'text', nullable: true })
+  video_url!: string | null;
+
+  @Column({ nullable: true })
+  entrepreneurship_id!: number;
+
+  @ManyToOne(() => EntrepreneurshipEntity)
+  @JoinColumn({ name: 'entrepreneurship_id' })
+  entrepreneurship!: EntrepreneurshipEntity;
+
+  @Column({ type: 'boolean', default: false })
+  is_active!: boolean;
 
   @CreateDateColumn()
   created_at!: Date;

@@ -44,6 +44,10 @@ export class UserApplicationService {
                 loginData.password
             );
 
+            if (!user) {
+                throw new Error('Credenciales inválidas');
+            }
+
             // Actualizar last_login
             await this.userDomainService.updateUser(user.id!, { last_login: new Date() });
 
@@ -63,6 +67,7 @@ export class UserApplicationService {
             id: user.id,
             email: user.email,
             full_name: user.full_name,
+            profile_image: user.profile_image,
             metadata: user.metadata ? this.mapToMetadataDTO(user.metadata) : undefined
         };
     }
@@ -143,5 +148,33 @@ export class UserApplicationService {
     }
     async hashPassword(password: string): Promise<string> {
         return this.authService.hashPassword(password);
+    }
+
+    // Obtener perfil público de un usuario con sus emprendimientos
+    async findPublicProfileById(userId: number) {
+        const user = await this.userDomainService.findUserWithEntrepreneurships(userId);
+        if (!user) return null;
+        return {
+            id: user.id,
+            full_name: user.full_name,
+            profile_image: user.profile_image,
+            entrepreneurships: (user.entrepreneurships || []).map((e: any) => ({
+                id: e.id,
+                title: e.title,
+                location: e.category, // o el campo correcto
+                cover_image: e.cover_image
+            })),
+            investmentIdeas: (user.investmentIdeas || []).map((idea: any) => ({
+                id: idea.id,
+                title: idea.title,
+                description: idea.description,
+                category: idea.category,
+                target_amount: idea.target_amount,
+                investors_needed: idea.investors_needed,
+                images: idea.images,
+                is_active: idea.is_active,
+                created_at: idea.created_at
+            }))
+        };
     }
 } 

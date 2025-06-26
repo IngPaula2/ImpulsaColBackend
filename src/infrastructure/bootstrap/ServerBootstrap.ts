@@ -13,9 +13,22 @@ import { authMiddleware } from '../middlewares/authMiddleware';
 import { UserDomainService } from '../../domain/services/UserDomainService';
 import { TypeORMUserRoleRepository } from '../persistence/repositories/TypeORMUserRoleRepository';
 import { UserRoleService } from '../../application/services/UserRoleService';
-import entrepreneurshipRoutes from '../web/routes/entrepreneurshipRoutes';
-import productRoutes from '../web/routes/productRoutes';
 import investmentIdeaRoutes from '../web/routes/investmentIdeaRoutes';
+import { IUserRepository, IAuthenticationService } from '../../domain/ports/IUserRepository';
+import { TypeORMProductRepository } from '../persistence/repositories/TypeORMProductRepository';
+import { ProductService } from '../../application/services/ProductService';
+import { ProductController } from '../web/controllers/ProductController';
+import { EntrepreneurshipService } from '../../application/services/EntrepreneurshipService';
+import { EntrepreneurshipController } from '../web/controllers/EntrepreneurshipController';
+import { TypeORMEntrepreneurshipRepository } from '../persistence/repositories/TypeORMEntrepreneurshipRepository';
+import { IProductRepository } from '../../domain/ports/IProductRepository';
+import { IEntrepreneurshipRepository } from '../../domain/ports/IEntrepreneurshipRepository';
+import { productRoutes } from '../web/routes/productRoutes';
+import { entrepreneurshipRoutes } from '../web/routes/entrepreneurshipRoutes';
+import { InvestmentIdeaController } from '../web/controllers/InvestmentIdeaController';
+import { InvestmentIdeaService } from '../../application/services/InvestmentIdeaService';
+import { TypeORMInvestmentIdeaRepository } from '../persistence/repositories/TypeORMInvestmentIdeaRepository';
+import categoryRoutes from '../web/routes/categoryRoutes';
 
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
@@ -24,9 +37,6 @@ export class ServerBootstrap {
             console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.get('origin')} - Body:`, req.body);
             next();
         });
-
-        this.app.use(express.json({ limit: '10mb' }));
-        this.app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
         // Servir archivos estáticos desde la carpeta 'uploads'
         this.app.use('/uploads', express.static(path.join(__dirname, '../../../uploads')));
@@ -39,7 +49,7 @@ export class ServerBootstrap {
                 'http://192.168.20.48:8081', // IP local
                 'exp://192.168.20.48:8081'  // Expo en dispositivo
             ],
-            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization'],
             credentials: true,
             optionsSuccessStatus: 200
@@ -59,8 +69,8 @@ export class ServerBootstrap {
     setupRoutes(): void {
         // Inicializar adaptadores
         const userRepository = AppDataSource.getRepository(UserEntity);
-        const userRepositoryAdapter = new TypeORMUserRepository(userRepository);
-        const authService = new JWTAuthService();
+        const userRepositoryAdapter: IUserRepository = new TypeORMUserRepository(userRepository);
+        const authService: IAuthenticationService = new JWTAuthService();
         
         // Inicializar servicio de dominio
         const userDomainService = new UserDomainService(
@@ -81,17 +91,59 @@ export class ServerBootstrap {
         // Inicializar controladores
         const userController = new UserController(userApplicationService, userRoleService);
 
+        const productRepository: IProductRepository = new TypeORMProductRepository(AppDataSource);
+        const productService = new ProductService(productRepository);
+        const productController = new ProductController(productService);
+
+        const entrepreneurshipRepository: IEntrepreneurshipRepository = new TypeORMEntrepreneurshipRepository(AppDataSource);
+        const entrepreneurshipService = new EntrepreneurshipService(entrepreneurshipRepository, productRepository);
+        const entrepreneurshipController = new EntrepreneurshipController(entrepreneurshipService);
+
         // Configurar rutas
         this.app.use('/api/users', createUserRoutes(userController));
+        
+        // Rutas de emprendimientos - GET / no requiere autenticación
+        this.app.get('/api/entrepreneurships', (req, res) => {
+            entrepreneurshipController.findAll(req, res);
+        });
+        this.app.use('/api/entrepreneurships', authMiddleware(authService), entrepreneurshipRoutes(entrepreneurshipController));
+        
+        // Rutas de productos - GET / no requiere autenticación
+        this.app.get('/api/products', (req, res) => {
+            productController.findAll(req, res);
+        });
+        this.app.use('/api/products', authMiddleware(authService), productRoutes(productController));
 
-        // Rutas protegidas con autenticación
-        this.app.use('/api/entrepreneurships', authMiddleware(authService), entrepreneurshipRoutes);
-        this.app.use('/api/products', authMiddleware(authService), productRoutes);
+        // Rutas de ideas de inversión - GET / no requiere autenticación
+        const investmentIdeaController = new InvestmentIdeaController(new InvestmentIdeaService(new TypeORMInvestmentIdeaRepository(AppDataSource)));
+        this.app.get('/api/investment-ideas', (req, res) => {
+            investmentIdeaController.findAll(req, res);
+        });
         this.app.use('/api/investment-ideas', authMiddleware(authService), investmentIdeaRoutes);
+
+        // Rutas de categorías (sin autenticación)
+        this.app.use('/api/categories', categoryRoutes);
 
         // Ejemplo de ruta protegida
         this.app.get('/api/protected', authMiddleware(authService), (req, res) => {
             res.json({ message: 'Esta es una ruta protegida' });
+        });
+
+        // Manejador de errores global
+        this.app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+            console.error('Error global:', err);
+            res.status(err.status || 500).json({
+                success: false,
+                message: err.message || 'Error interno del servidor'
+            });
+        });
+
+        // Manejador de rutas no encontradas
+        this.app.use((req: express.Request, res: express.Response) => {
+            res.status(404).json({
+                success: false,
+                message: 'Ruta no encontrada'
+            });
         });
     }
 

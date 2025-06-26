@@ -1,25 +1,25 @@
-import { Router } from 'express';
+import { Router, json } from 'express';
 import { AppDataSource } from '../../config/database';
 import { TypeORMEntrepreneurshipRepository } from '../../persistence/repositories/TypeORMEntrepreneurshipRepository';
 import { EntrepreneurshipService } from '../../../application/services/EntrepreneurshipService';
 import { EntrepreneurshipController } from '../controllers/EntrepreneurshipController';
 import upload from '../middlewares/multerEntrepreneurshipConfig';
 
-const router = Router();
-const repository = new TypeORMEntrepreneurshipRepository(AppDataSource);
-const service = new EntrepreneurshipService(repository);
-const controller = new EntrepreneurshipController(service);
+export const entrepreneurshipRoutes = (controller: EntrepreneurshipController) => {
+    const router = Router();
+    const jsonParser = json();
 
-router.post('/', controller.create);
-router.get('/', controller.findAll);
-router.get('/mine', controller.findMine);
-router.get('/:id', controller.findOne);
-router.put('/:id', controller.update);
-router.delete('/:id', controller.delete);
-router.post(
-  '/:id/upload-image',
-  upload.single('entrepreneurshipImage'),
-  controller.uploadImage
-);
+    router.post('/', jsonParser, controller.create);
+    router.get('/', controller.findAll);
+    router.get('/mine', controller.findMine);
+    router.get('/:id', controller.findById);
+    router.put('/:id', jsonParser, controller.update);
+    router.delete('/:id', controller.delete);
+    router.post(
+        '/:id/cover-image',
+        upload.single('cover_image'),
+        controller.updateCoverImage
+    );
 
-export default router; 
+    return router;
+}; 

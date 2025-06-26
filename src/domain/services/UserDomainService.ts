@@ -22,28 +22,19 @@ export class UserDomainService {
         return user;
     }
 
-    async validateCredentials(email: string, password: string): Promise<User> {
-        console.log('Validando credenciales para email:', email);
+    async validateCredentials(email: string, password_hash: string): Promise<User | null> {
         const user = await this.userRepository.findByEmail(email);
-        
+
         if (!user) {
-            console.log('Usuario no encontrado');
-            throw new Error('Credenciales inválidas');
+            return null;
         }
 
-        console.log('Usuario encontrado, verificando contraseña');
-        const isValidPassword = await this.authService.comparePasswords(
-            password,
-            user.password_hash || ''
-        );
-
-        console.log('Resultado de la validación de contraseña:', isValidPassword);
+        const isValidPassword = await this.authService.comparePasswords(password_hash, user.password_hash!);
+        
         if (!isValidPassword) {
-            console.log('Contraseña inválida');
-            throw new Error('Credenciales inválidas');
+            return null;
         }
 
-        console.log('Credenciales válidas');
         return user;
     }
 
@@ -103,28 +94,27 @@ export class UserDomainService {
     }
 
     // Nuevo: actualizar usuario por id
-    async updateUser(id: number, updateData: UserUpdateData): Promise<User> {
-        console.log('UserDomainService.updateUser - Iniciando actualización');
-        console.log('UserDomainService.updateUser - updateData:', updateData);
-        
-        // Validar campos individuales si existen
-        if (updateData.document_type && !['CC', 'CE', 'TI', 'PP'].includes(updateData.document_type)) {
-            throw new Error('Tipo de documento inválido');
-        }
-        if (updateData.document_number && !/^\d{6,12}$/.test(updateData.document_number)) {
-            throw new Error('Número de documento inválido');
-        }
+    async updateUser(userId: number, updateData: UserUpdateData): Promise<User> {
         if (updateData.phone) {
-            console.log('UserDomainService.updateUser - Validando teléfono:', updateData.phone);
-            const cleanPhone = updateData.phone.replace(/[\s-]/g, '');
-            if (!/^3\d{9}$/.test(cleanPhone)) {
-                throw new Error('El número de teléfono debe comenzar con 3 y tener 10 dígitos');
-            }
+            const cleanPhone = this.validateAndCleanPhoneNumber(updateData.phone);
             updateData.phone = cleanPhone;
-            console.log('UserDomainService.updateUser - Teléfono validado:', cleanPhone);
         }
-        
-        console.log('UserDomainService.updateUser - Llamando al repositorio');
-        return this.userRepository.update(id, updateData);
+
+        return this.userRepository.update(userId, updateData);
+    }
+
+    private validateAndCleanPhoneNumber(phone: string): string {
+        // Eliminar espacios y guiones del número de teléfono
+        const cleanPhone = phone.replace(/[\s-]/g, '');
+        // Validar que sea un número de teléfono colombiano válido
+        if (!/^3\d{9}$/.test(cleanPhone)) {
+            throw new Error('El número de teléfono debe comenzar con 3 y tener 10 dígitos');
+        }
+        return cleanPhone;
+    }
+
+    // Obtener usuario con sus emprendimientos
+    async findUserWithEntrepreneurships(id: number): Promise<User | null> {
+        return this.userRepository.findUserWithEntrepreneurships(id);
     }
 } 
