@@ -29,6 +29,7 @@ import { InvestmentIdeaController } from '../web/controllers/InvestmentIdeaContr
 import { InvestmentIdeaService } from '../../application/services/InvestmentIdeaService';
 import { TypeORMInvestmentIdeaRepository } from '../persistence/repositories/TypeORMInvestmentIdeaRepository';
 import categoryRoutes from '../web/routes/categoryRoutes';
+import departmentRoutes from '../web/routes/departmentRoutes';
 
 // Chat imports
 import { TypeORMChatRepository } from '../persistence/repositories/TypeORMChatRepository';
@@ -174,6 +175,9 @@ export class ServerBootstrap {
 
         // Rutas de categorías (sin autenticación)
         this.app.use('/api/categories', categoryRoutes);
+
+        // Rutas de departamentos (sin autenticación)
+        this.app.use('/api/departments', departmentRoutes);
 
         // Rutas de chat (requieren autenticación)
         this.app.use('/api/chats', authMiddleware(authService), createChatRoutes(chatController));

@@ -9,6 +9,8 @@ import { MessageEntity } from '../persistence/entities/MessageEntity';
 import { FavoriteEntity } from '../persistence/entities/FavoriteEntity';
 import { NotificationEntity } from '../persistence/entities/NotificationEntity';
 import { PasswordResetTokenEntity } from '../persistence/entities/PasswordResetTokenEntity';
+import { DepartmentEntity } from '../persistence/entities/DepartmentEntity';
+import { CityEntity } from '../persistence/entities/CityEntity';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -30,7 +32,9 @@ export const AppDataSource = new DataSource({
         MessageEntity,
         FavoriteEntity,
         NotificationEntity,
-        PasswordResetTokenEntity
+        PasswordResetTokenEntity,
+        DepartmentEntity,
+        CityEntity
     ],
     synchronize: false, // Cambiado a false para prevenir pérdida de datos
     logging: true,
