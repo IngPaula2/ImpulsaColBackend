@@ -2,11 +2,13 @@ import { UserDomainService } from '../../domain/services/UserDomainService';
 import { RegisterUserDTO, UserDTO, AuthResponseDTO, LoginUserDTO, UserMetadataDTO } from '../dto/UserDTO';
 import { IAuthenticationService } from '../../domain/ports/IUserRepository';
 import { UserRegistrationData, UserMetadata } from '../../domain/models/User';
+import { NotificationApplicationService } from './NotificationApplicationService';
 
 export class UserApplicationService {
     constructor(
         private readonly userDomainService: UserDomainService,
-        private readonly authService: IAuthenticationService
+        private readonly authService: IAuthenticationService,
+        private readonly notificationService?: NotificationApplicationService
     ) {}
 
     async register(registerData: RegisterUserDTO): Promise<AuthResponseDTO> {
@@ -26,6 +28,17 @@ export class UserApplicationService {
 
             // Generar token
             const token = this.authService.generateToken(user);
+
+            // Crear notificación de bienvenida automáticamente
+            if (this.notificationService && user.id) {
+                try {
+                    await this.notificationService.createWelcomeNotification(user.id);
+                    console.log('Notificación de bienvenida creada para usuario:', user.id);
+                } catch (error) {
+                    console.error('Error al crear notificación de bienvenida:', error);
+                    // No lanzamos el error para no afectar el registro
+                }
+            }
 
             // Mapear respuesta
             return {

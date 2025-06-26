@@ -30,6 +30,29 @@ import { InvestmentIdeaService } from '../../application/services/InvestmentIdea
 import { TypeORMInvestmentIdeaRepository } from '../persistence/repositories/TypeORMInvestmentIdeaRepository';
 import categoryRoutes from '../web/routes/categoryRoutes';
 
+// Chat imports
+import { TypeORMChatRepository } from '../persistence/repositories/TypeORMChatRepository';
+import { ChatDomainService } from '../../domain/services/ChatDomainService';
+import { ChatApplicationService } from '../../application/services/ChatApplicationService';
+import { ChatController } from '../web/controllers/ChatController';
+import { createChatRoutes } from '../web/routes/chatRoutes';
+import { IChatRepository } from '../../domain/ports/IChatRepository';
+
+// Favorite imports
+import { TypeORMFavoriteRepository } from '../persistence/repositories/TypeORMFavoriteRepository';
+import { FavoriteApplicationService } from '../../application/services/FavoriteApplicationService';
+import { FavoriteController } from '../web/controllers/FavoriteController';
+import { createFavoriteRoutes } from '../web/routes/favoriteRoutes';
+import { IFavoriteRepository } from '../../domain/ports/IFavoriteRepository';
+
+// Notification imports
+import { TypeORMNotificationRepository } from '../persistence/repositories/TypeORMNotificationRepository';
+import { NotificationDomainService } from '../../domain/services/NotificationDomainService';
+import { NotificationApplicationService } from '../../application/services/NotificationApplicationService';
+import { NotificationController } from '../web/controllers/NotificationController';
+import { createNotificationRoutes } from '../web/routes/notificationRoutes';
+import { INotificationRepository } from '../../domain/ports/INotificationRepository';
+
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
         // Middleware para logging de peticiones (debe ir primero)
@@ -46,8 +69,8 @@ export class ServerBootstrap {
                 'http://localhost:19000',  // Expo en desarrollo
                 'http://localhost:19006',  // Expo en web
                 'http://localhost:8081',   // Metro bundler
-                'http://192.168.20.48:8081', // IP local
-                'exp://192.168.20.48:8081'  // Expo en dispositivo
+                'http://192.168.20.36:8081', // IP local
+                'exp://192.168.20.36:8081'  // Expo en dispositivo
             ],
             methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
             allowedHeaders: ['Content-Type', 'Authorization'],
@@ -78,10 +101,17 @@ export class ServerBootstrap {
             authService
         );
 
-        // Inicializar servicio de aplicación
+        // Inicializar servicios de notificaciones primero
+        const notificationRepository: INotificationRepository = new TypeORMNotificationRepository(AppDataSource);
+        const notificationDomainService = new NotificationDomainService(notificationRepository);
+        const notificationApplicationService = new NotificationApplicationService(notificationDomainService);
+        const notificationController = new NotificationController(notificationApplicationService);
+
+        // Inicializar servicio de aplicación (con notificaciones)
         const userApplicationService = new UserApplicationService(
             userDomainService,
-            authService
+            authService,
+            notificationApplicationService
         );
 
         // Inicializar adaptador y servicio de roles
@@ -98,6 +128,17 @@ export class ServerBootstrap {
         const entrepreneurshipRepository: IEntrepreneurshipRepository = new TypeORMEntrepreneurshipRepository(AppDataSource);
         const entrepreneurshipService = new EntrepreneurshipService(entrepreneurshipRepository, productRepository);
         const entrepreneurshipController = new EntrepreneurshipController(entrepreneurshipService);
+
+        // Inicializar servicios de chat (con notificaciones)
+        const chatRepository: IChatRepository = new TypeORMChatRepository(AppDataSource);
+        const chatDomainService = new ChatDomainService(chatRepository);
+        const chatApplicationService = new ChatApplicationService(chatDomainService, notificationApplicationService);
+        const chatController = new ChatController(chatApplicationService);
+
+        // Inicializar servicios de favoritos (con notificaciones)
+        const favoriteRepository: IFavoriteRepository = new TypeORMFavoriteRepository(AppDataSource);
+        const favoriteApplicationService = new FavoriteApplicationService(favoriteRepository, notificationApplicationService);
+        const favoriteController = new FavoriteController(favoriteApplicationService);
 
         // Configurar rutas
         this.app.use('/api/users', createUserRoutes(userController));
@@ -123,6 +164,15 @@ export class ServerBootstrap {
 
         // Rutas de categorías (sin autenticación)
         this.app.use('/api/categories', categoryRoutes);
+
+        // Rutas de chat (requieren autenticación)
+        this.app.use('/api/chats', authMiddleware(authService), createChatRoutes(chatController));
+
+        // Rutas de favoritos (requieren autenticación)
+        this.app.use('/api/favorites', authMiddleware(authService), createFavoriteRoutes(favoriteController));
+
+        // Rutas de notificaciones (requieren autenticación)
+        this.app.use('/api/notifications', authMiddleware(authService), createNotificationRoutes(notificationController));
 
         // Ejemplo de ruta protegida
         this.app.get('/api/protected', authMiddleware(authService), (req, res) => {

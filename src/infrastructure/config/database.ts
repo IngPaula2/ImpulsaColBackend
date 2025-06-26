@@ -4,6 +4,10 @@ import { EntrepreneurshipEntity } from '../persistence/entities/Entrepreneurship
 import { ProductEntity } from '../persistence/entities/ProductEntity';
 import { InvestmentIdeaEntity } from '../persistence/entities/InvestmentIdeaEntity';
 import { CategoryEntity } from '../persistence/entities/CategoryEntity';
+import { ChatEntity } from '../persistence/entities/ChatEntity';
+import { MessageEntity } from '../persistence/entities/MessageEntity';
+import { FavoriteEntity } from '../persistence/entities/FavoriteEntity';
+import { NotificationEntity } from '../persistence/entities/NotificationEntity';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -20,7 +24,11 @@ export const AppDataSource = new DataSource({
         EntrepreneurshipEntity,
         ProductEntity,
         InvestmentIdeaEntity,
-        CategoryEntity
+        CategoryEntity,
+        ChatEntity,
+        MessageEntity,
+        FavoriteEntity,
+        NotificationEntity
     ],
     synchronize: false, // Cambiado a false para prevenir pérdida de datos
     logging: true,
