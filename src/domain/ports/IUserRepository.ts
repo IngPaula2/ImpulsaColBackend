@@ -15,6 +15,8 @@ export interface UserUpdateData {
     birth_date?: Date;
     last_login?: Date;
     notifications_enabled?: boolean;
+    firstName?: string;
+    lastName?: string;
 }
 
 export interface IUserRepository {

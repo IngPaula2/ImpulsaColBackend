@@ -7,6 +7,7 @@ import { EmailService } from '../../infrastructure/adapters/EmailService';
 import { PasswordResetTokenEntity } from '../../infrastructure/persistence/entities/PasswordResetTokenEntity';
 import { IPasswordResetTokenRepository } from '../../domain/ports/IPasswordResetTokenRepository';
 import { User } from '../../domain/models/User';
+import { UserValidators } from '../../domain/validators/UserValidators';
 
 export class UserApplicationService {
     constructor(
@@ -19,12 +20,21 @@ export class UserApplicationService {
 
     async register(registerData: RegisterUserDTO): Promise<AuthResponseDTO> {
         try {
+            // Validar email antes de procesar
+            if (!UserValidators.isValidEmail(registerData.email)) {
+                throw new Error('El formato del email es inválido. Debe tener un formato válido como usuario@dominio.com');
+            }
+
+            // Normalizar email a minúsculas
+            const normalizedEmail = UserValidators.normalizeEmail(registerData.email);
+
             // Hashear la contraseña
             const hashedPassword = await this.authService.hashPassword(registerData.password);
 
-            // Convertir DTO a modelo de dominio
+            // Convertir DTO a modelo de dominio con email normalizado
             const domainData: UserRegistrationData = {
                 ...registerData,
+                email: normalizedEmail,
                 password: hashedPassword,
                 metadata: registerData.metadata ? this.mapToDomainMetadata(registerData.metadata) : undefined
             };
@@ -58,8 +68,11 @@ export class UserApplicationService {
 
     async login(loginData: LoginUserDTO): Promise<AuthResponseDTO> {
         try {
+            // Normalizar email a minúsculas
+            const normalizedEmail = UserValidators.normalizeEmail(loginData.email);
+            
             const user = await this.userDomainService.validateCredentials(
-                loginData.email,
+                normalizedEmail,
                 loginData.password
             );
 

@@ -1,5 +1,6 @@
 import { User, UserRegistrationData } from '../models/User';
 import { IUserRepository, IAuthenticationService, UserUpdateData } from '../ports/IUserRepository';
+import { UserValidators } from '../validators/UserValidators';
 
 export class UserDomainService {
     constructor(
@@ -11,19 +12,42 @@ export class UserDomainService {
         // Validaciones de dominio
         this.validateUserRegistrationData(userData);
 
-        // Verificar si el usuario ya existe
-        const existingUser = await this.userRepository.findByEmail(userData.email);
+        // Normalizar email a minúsculas
+        const normalizedEmail = UserValidators.normalizeEmail(userData.email);
+
+        // Normalizar nombre y apellido si existen
+        let normalizedFirstName = userData.firstName;
+        let normalizedLastName = userData.lastName;
+        if (userData.firstName) {
+            normalizedFirstName = UserValidators.normalizeNamePart(userData.firstName);
+        }
+        if (userData.lastName) {
+            normalizedLastName = UserValidators.normalizeNamePart(userData.lastName);
+        }
+
+        // Verificar si el usuario ya existe (usando email normalizado)
+        const existingUser = await this.userRepository.findByEmail(normalizedEmail);
         if (existingUser) {
             throw new Error('El email ya está registrado');
         }
 
-        // Crear el usuario
-        const user = await this.userRepository.save(userData);
+        // Crear el usuario con email y nombres normalizados
+        const userDataWithNormalizedFields = {
+            ...userData,
+            email: normalizedEmail,
+            firstName: normalizedFirstName,
+            lastName: normalizedLastName
+        };
+
+        const user = await this.userRepository.save(userDataWithNormalizedFields);
         return user;
     }
 
     async validateCredentials(email: string, password_hash: string): Promise<User | null> {
-        const user = await this.userRepository.findByEmail(email);
+        // Normalizar email a minúsculas para la búsqueda
+        const normalizedEmail = UserValidators.normalizeEmail(email);
+        
+        const user = await this.userRepository.findByEmail(normalizedEmail);
 
         if (!user) {
             return null;
@@ -39,12 +63,12 @@ export class UserDomainService {
     }
 
     private validateUserRegistrationData(data: UserRegistrationData): void {
-        // Validar email
+        // Validar email con validaciones robustas
         if (!data.email) {
             throw new Error('El email es requerido');
         }
-        if (!this.isValidEmail(data.email)) {
-            throw new Error('El formato del email es inválido');
+        if (!UserValidators.isValidEmail(data.email)) {
+            throw new Error('El formato del email es inválido. Debe tener un formato válido como usuario@dominio.com');
         }
 
         // Validar contraseña
@@ -58,6 +82,12 @@ export class UserDomainService {
         // Validar nombre y apellido
         if (!data.firstName || !data.lastName) {
             throw new Error('Nombre y apellido son requeridos');
+        }
+        if (!UserValidators.isValidNamePart(data.firstName)) {
+            throw new Error('El nombre solo debe contener letras, guiones o apóstrofes y tener al menos 2 caracteres');
+        }
+        if (!UserValidators.isValidNamePart(data.lastName)) {
+            throw new Error('El apellido solo debe contener letras, guiones o apóstrofes y tener al menos 2 caracteres');
         }
 
         // Validar metadatos si existen
@@ -83,11 +113,6 @@ export class UserDomainService {
         }
     }
 
-    private isValidEmail(email: string): boolean {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
     // Nuevo: obtener usuario por id
     async findById(id: number): Promise<User | null> {
         return this.userRepository.findById(id);
@@ -95,11 +120,35 @@ export class UserDomainService {
 
     // Nuevo: obtener usuario por email
     async findByEmail(email: string): Promise<User | null> {
-        return this.userRepository.findByEmail(email);
+        // Normalizar email a minúsculas para la búsqueda
+        const normalizedEmail = UserValidators.normalizeEmail(email);
+        return this.userRepository.findByEmail(normalizedEmail);
     }
 
     // Nuevo: actualizar usuario por id
     async updateUser(userId: number, updateData: UserUpdateData): Promise<User> {
+        // Si se está actualizando el email, normalizarlo
+        if (updateData.email) {
+            if (!UserValidators.isValidEmail(updateData.email)) {
+                throw new Error('El formato del email es inválido');
+            }
+            updateData.email = UserValidators.normalizeEmail(updateData.email);
+        }
+
+        // Si se está actualizando el nombre o apellido, normalizarlos y validarlos
+        if (updateData.firstName) {
+            if (!UserValidators.isValidNamePart(updateData.firstName)) {
+                throw new Error('El nombre solo debe contener letras, guiones o apóstrofes y tener al menos 2 caracteres');
+            }
+            updateData.firstName = UserValidators.normalizeNamePart(updateData.firstName);
+        }
+        if (updateData.lastName) {
+            if (!UserValidators.isValidNamePart(updateData.lastName)) {
+                throw new Error('El apellido solo debe contener letras, guiones o apóstrofes y tener al menos 2 caracteres');
+            }
+            updateData.lastName = UserValidators.normalizeNamePart(updateData.lastName);
+        }
+
         if (updateData.phone) {
             const cleanPhone = this.validateAndCleanPhoneNumber(updateData.phone);
             updateData.phone = cleanPhone;

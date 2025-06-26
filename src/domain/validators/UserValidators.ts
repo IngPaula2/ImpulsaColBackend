@@ -1,8 +1,47 @@
 export class UserValidators {
-    // Validación de email (debe tener formato correcto con @)
+    // Validación de email más robusta (debe tener formato correcto con @ y dominio válido)
     static isValidEmail(email: string): boolean {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+        // Regex más robusta para validación de email
+        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+        
+        if (!emailRegex.test(email)) {
+            return false;
+        }
+
+        // Validaciones adicionales de dominio
+        const [userPart, domainPart] = email.split('@');
+        
+        // Validar parte del usuario
+        if (!userPart || userPart.length === 0 || userPart.length > 64) {
+            return false;
+        }
+
+        // Validar dominio
+        if (!domainPart || domainPart.length === 0 || domainPart.length > 253) {
+            return false;
+        }
+
+        // Validar extensión de dominio
+        const validExtensions = ['.com', '.co', '.org', '.net', '.edu', '.gov', '.mil', '.info', '.biz'];
+        const hasValidExtension = validExtensions.some(ext => 
+            domainPart.toLowerCase().endsWith(ext)
+        );
+
+        if (!hasValidExtension) {
+            return false;
+        }
+
+        // Validar caracteres especiales en dominio
+        if (domainPart.startsWith('.') || domainPart.endsWith('.') || domainPart.includes('..')) {
+            return false;
+        }
+
+        return true;
+    }
+
+    // Función para normalizar email (convertir a minúsculas y limpiar)
+    static normalizeEmail(email: string): string {
+        return email.toLowerCase().trim();
     }
 
     // Validación de contraseña (mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número)
@@ -11,10 +50,31 @@ export class UserValidators {
         return passwordRegex.test(password);
     }
 
-    // Validación de nombre completo (solo letras y espacios, mínimo 3 caracteres)
-    static isValidFullName(fullName: string): boolean {
-        const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}$/;
-        return nameRegex.test(fullName);
+    // Función para normalizar nombre (capitalizar y limpiar espacios)
+    static normalizeFullName(fullName: string): string {
+        return fullName
+            .trim()
+            .replace(/\s+/g, ' ') // Reemplazar múltiples espacios con uno solo
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    }
+
+    // Normaliza un nombre individual (primera letra mayúscula, resto minúscula)
+    static normalizeNamePart(name: string): string {
+        return name
+            .trim()
+            .replace(/\s+/g, ' ')
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    }
+
+    // Valida un nombre individual (no permite números, mínimo 2 caracteres, solo letras, guiones y apóstrofes)
+    static isValidNamePart(name: string): boolean {
+        const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ'-]{2,}$/;
+        const normalized = this.normalizeNamePart(name);
+        return nameRegex.test(normalized);
     }
 
     // Validación de tipo de documento (CC, CE, TI, PP)
@@ -74,8 +134,11 @@ export class UserValidators {
         }
 
         // Validaciones opcionales (solo si el campo está presente)
-        if (userData.full_name && !this.isValidFullName(userData.full_name)) {
-            errors.push('El nombre completo solo debe contener letras y espacios (mínimo 3 caracteres)');
+        if (userData.firstName && !this.isValidNamePart(userData.firstName)) {
+            errors.push('El nombre solo debe contener letras, guiones o apóstrofes y tener al menos 2 caracteres');
+        }
+        if (userData.lastName && !this.isValidNamePart(userData.lastName)) {
+            errors.push('El apellido solo debe contener letras, guiones o apóstrofes y tener al menos 2 caracteres');
         }
 
         if (userData.document_type && !this.isValidDocumentType(userData.document_type)) {
@@ -120,8 +183,11 @@ export class UserValidators {
             errors.push('El email no es válido');
         }
 
-        if (userData.full_name !== undefined && !this.isValidFullName(userData.full_name)) {
-            errors.push('El nombre completo solo debe contener letras y espacios (mínimo 3 caracteres)');
+        if (userData.firstName !== undefined && !this.isValidNamePart(userData.firstName)) {
+            errors.push('El nombre solo debe contener letras, guiones o apóstrofes y tener al menos 2 caracteres');
+        }
+        if (userData.lastName !== undefined && !this.isValidNamePart(userData.lastName)) {
+            errors.push('El apellido solo debe contener letras, guiones o apóstrofes y tener al menos 2 caracteres');
         }
 
         if (userData.document_type !== undefined && !this.isValidDocumentType(userData.document_type)) {
