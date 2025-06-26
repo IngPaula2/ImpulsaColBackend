@@ -53,6 +53,10 @@ import { NotificationController } from '../web/controllers/NotificationControlle
 import { createNotificationRoutes } from '../web/routes/notificationRoutes';
 import { INotificationRepository } from '../../domain/ports/INotificationRepository';
 
+// Password reset imports
+import { TypeORMPasswordResetTokenRepository } from '../persistence/repositories/TypeORMPasswordResetTokenRepository';
+import { EmailService } from '../adapters/EmailService';
+
 export class ServerBootstrap {
     constructor(private readonly app: express.Application) {
         // Middleware para logging de peticiones (debe ir primero)
@@ -107,10 +111,16 @@ export class ServerBootstrap {
         const notificationApplicationService = new NotificationApplicationService(notificationDomainService);
         const notificationController = new NotificationController(notificationApplicationService);
 
-        // Inicializar servicio de aplicación (con notificaciones)
+        // Inicializar servicios para recuperación de contraseña
+        const passwordResetTokenRepo = new TypeORMPasswordResetTokenRepository(AppDataSource);
+        const emailService = new EmailService();
+
+        // Inicializar servicio de aplicación (con notificaciones y recuperación de contraseña)
         const userApplicationService = new UserApplicationService(
             userDomainService,
             authService,
+            passwordResetTokenRepo,
+            emailService,
             notificationApplicationService
         );
 

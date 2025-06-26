@@ -8,6 +8,7 @@ import { ChatEntity } from '../persistence/entities/ChatEntity';
 import { MessageEntity } from '../persistence/entities/MessageEntity';
 import { FavoriteEntity } from '../persistence/entities/FavoriteEntity';
 import { NotificationEntity } from '../persistence/entities/NotificationEntity';
+import { PasswordResetTokenEntity } from '../persistence/entities/PasswordResetTokenEntity';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -28,7 +29,8 @@ export const AppDataSource = new DataSource({
         ChatEntity,
         MessageEntity,
         FavoriteEntity,
-        NotificationEntity
+        NotificationEntity,
+        PasswordResetTokenEntity
     ],
     synchronize: false, // Cambiado a false para prevenir pérdida de datos
     logging: true,
