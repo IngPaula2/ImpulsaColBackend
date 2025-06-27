@@ -4,14 +4,18 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
+    "build:clean": "rm -rf dist && npm run build",
+    "start:prod": "npm run build && npm start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm migration:generate -- -d src/infrastructure/config/database.ts",
     "migration:run": "npm run typeorm migration:run -- -d src/infrastructure/config/database.ts",
-    "migration:revert": "npm run typeorm migration:revert -- -d src/infrastructure/config/database.ts"
+    "migration:revert": "npm run typeorm migration:revert -- -d src/infrastructure/config/database.ts",
+    "deploy:setup": "npm install && npm run build && npm run migration:run",
+    "deploy:start": "NODE_ENV=production npm start"
   },
   "keywords": [],
   "author": "",

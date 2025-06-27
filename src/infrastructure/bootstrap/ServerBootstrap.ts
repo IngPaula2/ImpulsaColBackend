@@ -66,19 +66,29 @@ export class ServerBootstrap {
             next();
         });
 
+        this.app.use(express.json({ limit: '10mb' }));
+        this.app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
         // Servir archivos estáticos desde la carpeta 'uploads'
         this.app.use('/uploads', express.static(path.join(__dirname, '../../../uploads')));
 
+        // Configuración simplificada de CORS para producción
         this.app.use(cors({
             origin: [
                 'http://localhost:19000',  // Expo en desarrollo
                 'http://localhost:19006',  // Expo en web
                 'http://localhost:8081',   // Metro bundler
-                'http://192.168.20.36:8081', // IP local
-                'exp://192.168.20.36:8081'  // Expo en dispositivo
-            ],
+                'http://localhost:3000',   // Frontend web local
+                'http://192.168.20.36:8081', // IP local específica
+                'exp://192.168.20.36:8081',  // Expo en dispositivo
+                'https://impulsacol.twentybyte.com', // Dominio de producción
+                'https://*.twentybyte.com', // Subdominio de twentybyte
+                // Permitir IPs locales dinámicas para desarrollo
+                process.env.LOCAL_IP ? `http://${process.env.LOCAL_IP}:8081` : null,
+                process.env.LOCAL_IP ? `exp://${process.env.LOCAL_IP}:8081` : null,
+            ].filter(Boolean), // Filtrar valores null/undefined
             methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
             credentials: true,
             optionsSuccessStatus: 200
         }));
