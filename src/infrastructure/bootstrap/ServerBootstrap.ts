@@ -222,10 +222,10 @@ export class ServerBootstrap {
 
                         // Creamos y configuramos el servidor HTTP
                         const server = http.createServer(this.app);
-                        const PORT = process.env.PORT || 3000;
+                        const PORT = Number(process.env.PORT) || 3000;
 
                         server
-                            .listen(PORT)
+                            .listen(PORT, '0.0.0.0')
                             .on('listening', () => {
                                 console.log(`Server is running on http://localhost:${PORT}`);
                                 resolve(true);
