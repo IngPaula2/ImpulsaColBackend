@@ -171,4 +171,9 @@ export class UserDomainService {
     async findUserWithEntrepreneurships(id: number): Promise<User | null> {
         return this.userRepository.findUserWithEntrepreneurships(id);
     }
+
+    // Buscar usuarios por nombre, apellido o email (búsqueda parcial)
+    async searchUsers(query: string): Promise<User[]> {
+        return this.userRepository.searchUsers(query);
+    }
 } 

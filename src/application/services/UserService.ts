@@ -252,4 +252,10 @@ export class UserApplicationService {
         await this.userDomainService.updateUser(user.id!, { password_hash });
         await this.passwordResetTokenRepo.markAsUsed(token.token);
     }
+
+    // Buscar usuarios por nombre, apellido o email (búsqueda parcial)
+    async searchUsers(query: string): Promise<UserDTO[]> {
+        const users = await this.userDomainService.searchUsers(query);
+        return users.map((u: any) => this.mapToUserDTO(u));
+    }
 } 

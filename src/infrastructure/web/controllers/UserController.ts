@@ -296,4 +296,24 @@ export class UserController {
         });
       }
     };
+
+    // Buscar usuarios por nombre, apellido o email (búsqueda parcial)
+    searchUsers = async (req: Request, res: Response) => {
+      try {
+        const query = (req.query.query as string || '').trim();
+        if (!query || query.length < 2) {
+          return res.status(400).json({ success: false, message: 'Debes proporcionar al menos 2 caracteres para buscar.' });
+        }
+        const users = await this.userService.searchUsers(query);
+        // Solo datos públicos
+        const result = users.map((u: any) => ({
+          id: u.id,
+          full_name: u.full_name,
+          profile_image: u.profile_image
+        }));
+        res.json({ success: true, data: result });
+      } catch (error) {
+        res.status(500).json({ success: false, message: 'Error al buscar usuarios' });
+      }
+    };
 } 

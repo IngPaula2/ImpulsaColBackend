@@ -33,5 +33,8 @@ export const createUserRoutes = (userController: UserController): Router => {
     // Ruta protegida para subir la imagen de perfil
     router.put('/me/profile-image', authMiddleware(authService), multerProfileConfig.single('image'), userController.uploadProfileImage);
 
+    // Nueva ruta para buscar usuarios por query string
+    router.get('/search', userController.searchUsers);
+
     return router;
 }; 

@@ -25,6 +25,7 @@ export interface IUserRepository {
     findById(id: number): Promise<User | null>;
     update(id: number, userData: UserUpdateData): Promise<User>;
     findUserWithEntrepreneurships(id: number): Promise<User | null>;
+    searchUsers(query: string): Promise<User[]>;
 }
 
 // Puerto secundario para servicios de autenticación

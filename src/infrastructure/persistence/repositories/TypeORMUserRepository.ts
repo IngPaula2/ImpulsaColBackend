@@ -53,6 +53,14 @@ export class TypeORMUserRepository implements IUserRepository {
         });
     }
 
+    // Buscar usuarios por nombre completo o email (búsqueda parcial, insensible a mayúsculas/minúsculas)
+    async searchUsers(query: string): Promise<User[]> {
+        const users = await this.repository.createQueryBuilder('user')
+            .where('LOWER(user.full_name) LIKE :q OR LOWER(user.email) LIKE :q', { q: `%${query.toLowerCase()}%` })
+            .getMany();
+        return users.map(this.mapToUser);
+    }
+
     private mapToUser(entity: UserEntity): User {
         const metadata = {
             document_type: entity.document_type,
