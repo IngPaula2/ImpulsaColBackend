@@ -100,7 +100,9 @@ export class UserApplicationService {
             email: user.email,
             full_name: user.full_name,
             profile_image: user.profile_image,
-            metadata: user.metadata ? this.mapToMetadataDTO(user.metadata) : undefined
+            metadata: user.metadata ? this.mapToMetadataDTO(user.metadata) : undefined,
+            last_login: user.last_login,
+            password_hash: user.password_hash,
         };
     }
 

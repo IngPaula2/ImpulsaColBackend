@@ -43,7 +43,7 @@ export class UserDomainService {
         return user;
     }
 
-    async validateCredentials(email: string, password_hash: string): Promise<User | null> {
+    async validateCredentials(email: string, password: string): Promise<User | null> {
         // Normalizar email a minúsculas para la búsqueda
         const normalizedEmail = UserValidators.normalizeEmail(email);
         
@@ -53,7 +53,7 @@ export class UserDomainService {
             return null;
         }
 
-        const isValidPassword = await this.authService.comparePasswords(password_hash, user.password_hash!);
+        const isValidPassword = await this.authService.comparePasswords(password, user.password_hash!);
         
         if (!isValidPassword) {
             return null;
